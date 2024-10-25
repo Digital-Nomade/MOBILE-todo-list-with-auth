@@ -1,7 +1,10 @@
 import { Button } from "@/components/atoms/button/Button";
 import { Input } from "@/components/atoms/input/Input";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
-import { Styles } from "@/constants/Colors";
+import { useAppDispatch } from "@/config/redux/hooks";
+import { Styles } from "@/constants/StyleGuide";
+import { authenticateUser, setLoginWithoutAccountData } from "@/features/authFlowSlice";
+import { useSession } from "@/hooks/useSession";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,21 +21,26 @@ export default function Index() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: {
       errors
     }
   } = useForm<FormInputs>()
   const [loading, setLoading] = useState(false)
+  const dispatch = useAppDispatch()
+  const { session, signIn } = useSession()
 
   function onSubmit() {
     setLoading(true)
-    console.log('helo')
 
     setTimeout(() => {
+      dispatch(setLoginWithoutAccountData({ email: watch('email'), password: watch('password') }))
+      dispatch(authenticateUser({ isAuthenticated: true }))
+      signIn()
       setLoading(false)
-      router.navigate('')
     }, 2000)
   }
+
 
   const { colors, fontSizes } = Styles
 
@@ -87,7 +95,6 @@ export default function Index() {
             autoComplete="off"
             autoCorrect={false}
             onChangeText={(value) => setValue('password', value)}
-            autoFocus
             {...register('password', {
               required: 'You must provide a password',
               minLength: 6,
@@ -118,7 +125,11 @@ export default function Index() {
           </Button>
         </View>
         <View style={{ marginTop: '30%' }}>
-          <Pressable onPress={() => router.navigate('/(auth)/signup')}>
+          <Pressable onPress={() => {
+              dispatch(setLoginWithoutAccountData({ email: watch('email'), password: watch('password') }))
+              router.navigate('/(auth)/signup')
+            }}
+          >
             <Text
               style={{
                 color: colors.dangerLight,
