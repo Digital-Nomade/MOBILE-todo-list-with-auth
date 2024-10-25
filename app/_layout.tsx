@@ -1,18 +1,27 @@
-import { Stack } from "expo-router";
-import { useState } from "react";
+import { store } from "@/config/redux/store";
+import { SessionProvider } from "@/hooks/useSession";
+import { Slot, SplashScreen } from "expo-router";
+import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Provider } from "react-redux";
+
+SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
-  const [authenticated, setAuthenticated] = useState(false)
 
-  if (authenticated) {
-    <Stack>
-      <Stack.Screen name="(home)" />
-    </Stack>
-  }
+  useEffect(() => {
+    setTimeout(() => {
+      SplashScreen.hideAsync()
+    }, 5000)
+  }, [])
 
   return (
-    <Stack>
-      <Stack.Screen name="(auth)" options={{ title: '', headerTransparent: true, headerShown: false }} />
-    </Stack>
+    <Provider store={store}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SessionProvider>
+          <Slot />
+        </SessionProvider>
+      </GestureHandlerRootView>
+    </Provider>
   );
 }
