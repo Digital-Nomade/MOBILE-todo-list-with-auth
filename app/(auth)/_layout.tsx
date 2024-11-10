@@ -1,4 +1,4 @@
-import HeaderBackButton from "@/components/atoms/header-back-button/HeaderBackButton";
+import { HeaderBackButton } from "@/components/atoms";
 import { useSession } from "@/hooks/useSession";
 import { Redirect, Stack } from "expo-router";
 
