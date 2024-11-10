@@ -1,12 +1,12 @@
-import { Button } from "@/components/atoms/button/Button";
-import { Input } from "@/components/atoms/input/Input";
+import { Button, Input } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { useAppDispatch } from "@/config/redux/hooks";
-import { Styles } from "@/constants/StyleGuide";
-import { authenticateUser, setLoginWithoutAccountData } from "@/features/authFlowSlice";
+import { StylesGuide } from "@/constants/StyleGuide";
+import { useLoginUserMutation } from "@/features/auth/authApi";
+import { authenticateUser, persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
+import { LoginAccountPayload } from "@/features/auth/authTypes";
 import { useSession } from "@/hooks/useSession";
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Pressable, Text, View } from "react-native";
 
@@ -26,23 +26,28 @@ export default function Index() {
       errors
     }
   } = useForm<FormInputs>()
-  const [loading, setLoading] = useState(false)
   const dispatch = useAppDispatch()
   const { session, signIn } = useSession()
+  const [login, { isLoading }] = useLoginUserMutation()
 
-  function onSubmit() {
-    setLoading(true)
+  async function onSubmit() {
+    try {
+      const loginPayload: LoginAccountPayload = {
+        email: watch('email'),
+        password: watch('password')
+      }
 
-    setTimeout(() => {
-      dispatch(setLoginWithoutAccountData({ email: watch('email'), password: watch('password') }))
-      dispatch(authenticateUser({ isAuthenticated: true }))
-      signIn()
-      setLoading(false)
-    }, 2000)
-  }
+      const result = await login(loginPayload)
+      if (result.data?.token && result.data?.id) {
+        dispatch(authenticateUser({ isAuthenticated: !!result.data?.token, accessToken: result.data?.token }))
+        signIn()
+      }
+    } catch(error) {
 
+    }
+  } 
 
-  const { colors, fontSizes } = Styles
+  const { colors, fontSizes } = StylesGuide
 
   return (
     <GlobalWrapper>
@@ -118,7 +123,7 @@ export default function Index() {
             buttonType="secondary"
             variant="fill"
             rounded
-            loading={loading}
+            loading={isLoading}
             onPress={handleSubmit(onSubmit)}
           >
             login
@@ -126,7 +131,7 @@ export default function Index() {
         </View>
         <View style={{ marginTop: '30%' }}>
           <Pressable onPress={() => {
-              dispatch(setLoginWithoutAccountData({ email: watch('email'), password: watch('password') }))
+              dispatch(persistLoginDataForSignUp({ email: watch('email'), password: watch('password') }))
               router.navigate('/(auth)/signup')
             }}
           >

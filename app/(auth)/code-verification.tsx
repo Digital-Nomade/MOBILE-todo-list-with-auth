@@ -1,6 +1,6 @@
-import { InputCode } from "@/components/atoms/input-code/InputCode";
+import { InputCode } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
-import { Styles } from "@/constants/StyleGuide";
+import { StylesGuide } from "@/constants/StyleGuide";
 import { Text, View } from "react-native";
 
 export default function CodeVerification() {
@@ -9,8 +9,8 @@ export default function CodeVerification() {
       <View style={{ height: '100%' }}>
         <Text
           style={{
-            fontSize: Styles.fontSizes.xl,
-            color: Styles.colors.dangerLight,
+            fontSize: StylesGuide.fontSizes.xl,
+            color: StylesGuide.colors.dangerLight,
             marginBottom: 32
           }}
         >
@@ -18,8 +18,8 @@ export default function CodeVerification() {
         </Text>
         <Text
           style={{
-            color: Styles.colors.dangerLight,
-            fontSize: Styles.fontSizes.lg,
+            color: StylesGuide.colors.dangerLight,
+            fontSize: StylesGuide.fontSizes.lg,
             fontWeight: 200,
             marginBottom: 56,
           }}

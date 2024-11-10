@@ -1,8 +1,6 @@
-import { Button } from "@/components/atoms/button/Button";
-import { DatePicker } from "@/components/atoms/date-picker/DatePicker";
-import { Input } from "@/components/atoms/input/Input";
+import { Button, DatePicker, Input } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
-import { Styles } from "@/constants/StyleGuide";
+import { StylesGuide } from "@/constants/StyleGuide";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -31,13 +29,12 @@ export default function SignUpProfileScreen() {
   function onSubmit(data: unknown) {
     setLoading(true)
     setTimeout(() => {
-      console.log(data)
       setLoading(false)
       router.navigate('/(auth)/code-verification')
     }, 2000)
   }
 
-  const { colors, fontSizes } = Styles
+  const { colors, fontSizes } = StylesGuide
 
   return (
     <GlobalWrapper>
@@ -111,8 +108,8 @@ export default function SignUpProfileScreen() {
         <View style={{ marginBottom: 40, flexDirection: 'row', gap: 8 }}>
           <Text
             style={{
-              color: Styles.colors.dangerLight,
-              fontSize: Styles.fontSizes.lg,
+              color: StylesGuide.colors.dangerLight,
+              fontSize: StylesGuide.fontSizes.lg,
               fontWeight: 200,
               marginRight: 'auto'
             }}
@@ -122,6 +119,7 @@ export default function SignUpProfileScreen() {
           <DatePicker
             onChange={(date) => setValue('birthdate', date)}
             value={watch('birthdate')}
+            mode="date"
           />
         </View>
         <View style={{ marginBottom: 40 }}>

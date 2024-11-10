@@ -1,8 +1,7 @@
-import { Button } from "@/components/atoms/button/Button";
-import { Input } from "@/components/atoms/input/Input";
+import { Button, Input } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { useAppSelector } from "@/config/redux/hooks";
-import { Styles } from "@/constants/StyleGuide";
+import { StylesGuide } from "@/constants/StyleGuide";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -36,7 +35,7 @@ export default function SignUpScreen() {
     }, 2000)
   }
 
-  const { colors, fontSizes } = Styles
+  const { colors, fontSizes } = StylesGuide
 
   return (
     <GlobalWrapper>
