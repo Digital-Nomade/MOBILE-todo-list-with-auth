@@ -1,5 +1,5 @@
 import { EyeIcon } from "@/components/icons/EyeIcon";
-import { Styles } from "@/constants/Colors";
+import { StylesGuide } from "@/constants/StyleGuide";
 import { ForwardedRef, forwardRef, useState } from "react";
 import { Pressable, Text, TextInputProps, View } from "react-native";
 import { NativeViewGestureHandlerProps, TextInput } from "react-native-gesture-handler";
@@ -8,10 +8,11 @@ type InputProps = TextInputProps & NativeViewGestureHandlerProps & React.RefAttr
 
 interface Props extends InputProps {
   errorMessage?: string
+  contrast?: boolean
 }
 
-export const Input = forwardRef(({ errorMessage, ...props }: Props, ref: ForwardedRef<TextInput>) => {
-  const [displayPassword, setDisplayPassword] = useState(false)
+export const Input = forwardRef(({ errorMessage, contrast, ...props }: Props, ref: ForwardedRef<TextInput>) => {
+  const [displayPassword, setDisplayPassword] = useState(props.secureTextEntry)
 
   const style = props.style as object
   
@@ -20,26 +21,27 @@ export const Input = forwardRef(({ errorMessage, ...props }: Props, ref: Forward
       <TextInput
         {...props}
         style={{
-          borderBottomColor: Styles.colors.dangerLight,
+          borderBottomColor: StylesGuide.colors.dangerLight,
           borderBottomWidth: 1,
           width: '100%',
-          color: Styles.colors.white,
-          fontSize: Styles.fontSizes.lg,
+          color: StylesGuide.colors.white,
+          fontSize: StylesGuide.fontSizes.lg,
           paddingBottom: 8,
           paddingLeft: 4,
           fontWeight: '200',
           ...style
         }}
         ref={ref}
-        placeholderTextColor={Styles.colors.dangerLight}
+        placeholderTextColor={props.placeholderTextColor ? props.placeholderTextColor : StylesGuide.colors.dangerLight}
         secureTextEntry={displayPassword}
       />
       {errorMessage && (
         <Text
           style={{
-            color: Styles.colors.danger,
+            color:  contrast ? StylesGuide.colors.dangerDark : StylesGuide.colors.danger,
             position: 'absolute',
-            bottom: -20,
+            top: 40,
+            fontWeight: contrast ? 700 : 400
           }}
         >
           {errorMessage}
