@@ -7,7 +7,7 @@ interface Props {
   color: string
 }
 
-export default function HeaderBackButton({ label, color }: Props) {
+export function HeaderBackButton({ label, color }: Props) {
   const router = useRouter()
   
   return (
