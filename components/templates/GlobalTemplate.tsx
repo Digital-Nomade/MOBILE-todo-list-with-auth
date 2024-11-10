@@ -13,12 +13,11 @@ export function GlobalWrapper({ children }: Props) {
       <LinearGradient
         style={{
           flex: 1,
-          padding: 16
+          padding: 16,
         }}
         colors={['#BF0066', '#0E003A']}
       >
-        <SafeAreaView>
-
+        <SafeAreaView style={{ height: '100%'}}>
           { children }
         </SafeAreaView>
       </LinearGradient>
