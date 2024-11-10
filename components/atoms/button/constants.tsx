@@ -1,22 +1,22 @@
-import { Styles } from "@/constants/Colors";
+import { StylesGuide } from "@/constants/StyleGuide";
 
 export const buttonTypeMap = {
   primary: {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.primary,
+        borderColor: StylesGuide.colors.primary,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.primary,
+        backgroundColor: StylesGuide.colors.primary,
       },
       textStyles: {
-        color: Styles.colors.secondary,
+        color: StylesGuide.colors.secondary,
       }
     },
   },
@@ -24,18 +24,18 @@ export const buttonTypeMap = {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.secondary,
+        borderColor: StylesGuide.colors.secondary,
       },
       textStyles: {
-        color: Styles.colors.secondary,
+        color: StylesGuide.colors.secondary,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.secondary,
+        backgroundColor: StylesGuide.colors.secondary,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
   },
@@ -43,18 +43,18 @@ export const buttonTypeMap = {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.danger,
+        borderColor: StylesGuide.colors.danger,
       },
       textStyles: {
-        color: Styles.colors.danger,
+        color: StylesGuide.colors.danger,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.danger,
+        backgroundColor: StylesGuide.colors.danger,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
   },
@@ -62,18 +62,18 @@ export const buttonTypeMap = {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.dangerLight,
+        borderColor: StylesGuide.colors.dangerLight,
       },
       textStyles: {
-        color: Styles.colors.dangerLight,
+        color: StylesGuide.colors.dangerLight,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.dangerLight,
+        backgroundColor: StylesGuide.colors.dangerLight,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
   },
@@ -81,18 +81,18 @@ export const buttonTypeMap = {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.success,
+        borderColor: StylesGuide.colors.success,
       },
       textStyles: {
-        color: Styles.colors.success,
+        color: StylesGuide.colors.success,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.success,
+        backgroundColor: StylesGuide.colors.success,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
   },
@@ -100,18 +100,18 @@ export const buttonTypeMap = {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.alert,
+        borderColor: StylesGuide.colors.alert,
       },
       textStyles: {
-        color: Styles.colors.alert,
+        color: StylesGuide.colors.alert,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.alert,
+        backgroundColor: StylesGuide.colors.alert,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
   },
@@ -119,18 +119,18 @@ export const buttonTypeMap = {
     outlined: {
       viewStyles: { 
         backgroundColor: 'rgba(0, 0, 0, 0)',
-        borderColor: Styles.colors.info,
+        borderColor: StylesGuide.colors.info,
       },
       textStyles: {
-        color: Styles.colors.info,
+        color: StylesGuide.colors.info,
       }
     },
     fill: {
       viewStyles: { 
-        backgroundColor: Styles.colors.info,
+        backgroundColor: StylesGuide.colors.info,
       },
       textStyles: {
-        color: Styles.colors.primary,
+        color: StylesGuide.colors.primary,
       }
     },
   }

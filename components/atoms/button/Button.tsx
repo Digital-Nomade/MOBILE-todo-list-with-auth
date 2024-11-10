@@ -1,6 +1,8 @@
+import { StylesGuide } from "@/constants/StyleGuide";
 import { ReactNode } from "react";
 import { ActivityIndicator, Pressable, PressableProps, Text } from "react-native";
 import { NativeViewGestureHandlerProps } from "react-native-gesture-handler";
+import { Styles } from './Button.styles';
 import { buttonTypeMap } from "./constants";
 
 type Variant = 'outlined' | 'fill'
@@ -9,10 +11,13 @@ type Button = PressableProps & NativeViewGestureHandlerProps
 
 interface Props extends Button {
   variant: Variant
-  rounded: boolean
+  rounded?: boolean
   buttonType: ButtonType,
   children: ReactNode | string
   loading?: boolean
+  fullWidth?: boolean
+  width?: string | number
+  loaderIconColor?: string
 }
 
 export function Button({
@@ -21,30 +26,47 @@ export function Button({
   buttonType,
   rounded = false,
   loading,
+  fullWidth = false,
+  width = 'fit-content',
+  loaderIconColor = StylesGuide.colors.primary,
   ...props
 }: Props) {
 
   const buttonStyles = buttonTypeMap[buttonType][variant]
+  const styles = props.style as object
+
+  delete props.style
 
   return (
     <Pressable
-      style={{ 
-        ...buttonStyles.viewStyles,
-        padding: 8,
-        borderRadius: rounded ? 50 : 8,
-      }}
+      style={
+        Styles.pressable({ 
+          buttonStyles,
+          styles,
+          rounded,
+          isOutlined: variant === 'outlined',
+          fullWidth,
+          width,
+        }
+      )}
       {...props}
     >
       {
         typeof children === 'string'
         ? (
-          <Text style={{ ...buttonStyles.textStyles, fontSize: 24, marginHorizontal: 'auto' }}>
+          <Text style={Styles.text({ buttonStyles })}>
             {children}
           </Text> 
         )
         : children
       }
-      {loading &&  <ActivityIndicator style={{ position: 'absolute', right: 12, top: 12 }} color={"#0E003A"} size="small" />}
+      {loading &&  (
+        <ActivityIndicator
+          style={Styles.activityIndicator}
+          color={loaderIconColor}
+          size="small"
+        />
+      )}
     </Pressable>
   )
 }
