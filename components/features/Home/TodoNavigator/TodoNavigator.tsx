@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { AnimatePresence, MotiView } from 'moti';
 import { Fragment, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { styles } from './TodoNavigator.styles';
+
 
 type Directions = 'next' | 'previous'
 
@@ -77,33 +79,25 @@ export function TodoNavigator() {
   return (
     <Fragment>
       {loading
-        ? <ActivityIndicator style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} size={'large'}/>
+        ? <ActivityIndicator
+            style={styles.activityIndicator}
+            size={'large'}
+          />
         : (
         <AnimatePresence>
           <MotiView
-            style={{ flex: 1 }}
+            style={styles.motionView}
             key="main-content"
-            animate={animate ? {
-              translateX: -200
-            } : { translateX: 0 }}
+            animate={animate 
+            ? {
+              translateX: -400
+            } 
+            : { 
+              translateX: 0 
+            }}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: 8,
-              }}
-            >
-                <Text
-                  style={{
-                    color: StylesGuide.colors.white,
-                    fontSize: StylesGuide.fontSizes.xl,
-                    fontWeight: 200,
-                    width: '80%',
-                    lineHeight: 30,
-                  }}
-                >
+            <View style={styles.mainContainer}>
+                <Text style={styles.titleText}>
                   {todos[todoIndex]?.title ?? ''}
                 </Text>
                 <CheckBox
@@ -112,39 +106,47 @@ export function TodoNavigator() {
                   color={StylesGuide.colors.success}
                 />
             </View>
-            <View style={{ marginBottom: 16 }}>
+            <View style={styles.reminderDueToContainer}>
               {
                 !!todos[todoIndex]?.reminderOn && (
-                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                    <MaterialIcons name="access-alarm" size={24} color={StylesGuide.colors.dangerLight} />
-                    <Text style={{ color: StylesGuide.colors.white, fontSize: StylesGuide.fontSizes.md, fontWeight: 600 }}>
+                  <View style={styles.reminderContainer}>
+                    <MaterialIcons
+                      name="access-alarm"
+                      size={24}
+                      color={StylesGuide.colors.dangerLight} 
+                    />
+                    <Text style={styles.reminderText}>
                       {format(todos[todoIndex].reminderOn, 'hh:mm M/d/yyyy')}
                     </Text>
                   </View>
               )}
               {!!todos[todoIndex]?.dueTo && (
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                  <MaterialCommunityIcons name="calendar-clock" size={24} color={StylesGuide.colors.dangerLight} />
-                  <Text style={{ color: StylesGuide.colors.white, fontSize: StylesGuide.fontSizes.md, fontWeight: 600 }}>{format(todos[todoIndex].dueTo, 'M/d/yyyy')}</Text>
+                <View style={styles.dueToContainer}>
+                  <MaterialCommunityIcons
+                    name="calendar-clock"
+                    size={24}
+                    color={StylesGuide.colors.dangerLight}
+                  />
+                  <Text style={styles.dueToText}>
+                    {format(todos[todoIndex].dueTo, 'M/d/yyyy')}
+                  </Text>
                 </View>
               )}
             </View>
-            <ScrollView style={{ paddingVertical: 16,  }}>
-              <Text style={{ color: StylesGuide.colors.white, fontSize: StylesGuide.fontSizes.md, fontWeight: 300 }}>
+            <ScrollView style={styles.descriptionScrollView}>
+              <Text style={styles.descriptionText}>
                 {!!todos[todoIndex]?.description ? todos[todoIndex].description : 'No description'}
               </Text>
             </ScrollView>
             {
               todos[todoIndex]?.createdAt && (
-              <View style={{marginBottom: 48 }}>
-                <Text
-                  style={{
-                    textAlign: 'right',
-                    color: StylesGuide.colors.white,
-                    fontWeight: 200
-                  }}
-                >
-                  created at: <Text style={{ fontWeight: 300 }}>{format(todos[todoIndex].createdAt, 'M/dd/yyyy')}</Text></Text>
+              <View style={styles.createdAtContainer}>
+                <Text style={styles.createdAtText}>
+                  created at: 
+                  <Text style={styles.createdAtTextVariant}>
+                    {format(todos[todoIndex].createdAt, 'M/dd/yyyy')}
+                  </Text>
+                </Text>
               </View>
             )}
           </MotiView>
