@@ -3,9 +3,11 @@ import { useSession } from "@/hooks/useSession";
 import { Redirect, Stack } from "expo-router";
 
 export default function AuthLayout() {
-  const { session } = useSession()
+  const { isInitializing, isAuthenticated, user } = useSession()
 
-  if (session) return <Redirect href="/(home)" />
+  if (isInitializing) return null
+
+  if (isAuthenticated && user?.status === 'ACTIVE') return <Redirect href="/(home)" />
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

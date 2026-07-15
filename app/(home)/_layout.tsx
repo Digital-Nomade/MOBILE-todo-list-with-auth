@@ -1,5 +1,4 @@
 import { TabBarNavigation } from '@/components/organisms/TabBarNavigation/TabBarNavigation';
-import { useAppSelector } from '@/config/redux/hooks';
 import { StylesGuide } from '@/constants/StyleGuide';
 import { useSession } from '@/hooks/useSession';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -8,15 +7,22 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Redirect, Tabs } from 'expo-router';
 
 export default function RootLayout() {
-  const { session, signOut } = useSession()
-  const { credentials, } = useAppSelector(state => state.auth)
+  const { isInitializing, isAuthenticated, user } = useSession()
 
-  if (!session) {
+  if (isInitializing) {
+    return null
+  }
+
+  if (!isAuthenticated) {
     return <Redirect href='/(auth)' />
   }
 
-  if (!credentials.accessToken) {
-    signOut()
+  if (user?.status === 'PENDING_VERIFICATION') {
+    return <Redirect href='/(auth)/check-email' />
+  }
+
+  if (user?.status === 'SUSPENDED') {
+    return <Redirect href='/(auth)/account-unavailable' />
   }
 
   function getFocusedColor(isFocused: boolean) {

@@ -15,6 +15,9 @@ import { api } from './api'
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
+  // Tokens live in memory only (refresh token goes to SecureStore) and the
+  // server cache must never be written to AsyncStorage.
+  blacklist: ['auth', api.reducerPath],
 }
 
 const rootReducer = combineReducers({

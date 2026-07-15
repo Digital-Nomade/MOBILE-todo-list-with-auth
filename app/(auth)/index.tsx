@@ -1,19 +1,21 @@
 import { Button, Input } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { useAppDispatch } from "@/config/redux/hooks";
+import { getErrorCode, getUserFacingMessage } from "@/config/graphql/errors";
 import { StylesGuide } from "@/constants/StyleGuide";
-import { useLoginUserMutation } from "@/features/auth/authApi";
-import { authenticateUser, persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
-import { LoginAccountPayload } from "@/features/auth/authTypes";
-import { useSession } from "@/hooks/useSession";
+import { useLoginMutation } from "@/features/auth/authApi";
+import { persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
 import { Link, useRouter } from "expo-router";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Pressable, Text, View } from "react-native";
 
 interface FormInputs {
-  email: string
+  identifier: string
   password: string
 }
+
+const RATE_LIMIT_COOLDOWN_MS = 30000
 
 export default function Index() {
   const router = useRouter()
@@ -27,25 +29,40 @@ export default function Index() {
     }
   } = useForm<FormInputs>()
   const dispatch = useAppDispatch()
-  const { session, signIn } = useSession()
-  const [login, { isLoading }] = useLoginUserMutation()
+  const [login, { isLoading }] = useLoginMutation()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [rateLimited, setRateLimited] = useState(false)
+  const cooldownRef = useRef<ReturnType<typeof setTimeout>>()
 
-  async function onSubmit() {
+  async function onSubmit(data: FormInputs) {
+    setServerError(null)
+
     try {
-      const loginPayload: LoginAccountPayload = {
-        email: watch('email'),
-        password: watch('password')
-      }
+      const payload = await login({
+        identifier: data.identifier,
+        password: data.password,
+      }).unwrap()
 
-      const result = await login(loginPayload)
-      if (result.data?.token && result.data?.id) {
-        dispatch(authenticateUser({ isAuthenticated: !!result.data?.token, accessToken: result.data?.token }))
-        signIn()
+      if (payload.user.status === 'PENDING_VERIFICATION') {
+        router.replace('/(auth)/check-email')
       }
-    } catch(error) {
+      // ACTIVE users are redirected by the (auth) layout guard.
+      // SUSPENDED users normally fail with FORBIDDEN and land in the catch.
+    } catch (error) {
+      const code = getErrorCode(error)
 
+      setServerError(getUserFacingMessage(error, {
+        UNAUTHENTICATED: 'Invalid credentials. Please try again.',
+        FORBIDDEN: 'This account is not available. Verify your email or contact support.',
+      }))
+
+      if (code === 'TOO_MANY_REQUESTS') {
+        setRateLimited(true)
+        clearTimeout(cooldownRef.current)
+        cooldownRef.current = setTimeout(() => setRateLimited(false), RATE_LIMIT_COOLDOWN_MS)
+      }
     }
-  } 
+  }
 
   const { colors, fontSizes } = StylesGuide
 
@@ -65,27 +82,20 @@ export default function Index() {
           style={{ marginBottom: 40 }}
         >
           <Input
-            placeholder="email"
+            placeholder="email or username"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="off"
             autoCorrect={false}
-            onChangeText={(value) => setValue('email', value)}
+            onChangeText={(value) => setValue('identifier', value)}
             autoFocus
             {
-              ...register('email', 
-              { 
-                required: 'You must provide a valid email',
-                validate: (val: string) => {
-                    const regex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g
-                    if (!regex.test(val)) {
-                      return 'You must provide a valid email'
-                    }
-                  } 
-                }
-              )
+              ...register('identifier',
+              {
+                required: 'You must provide your email or username',
+              })
             }
-            errorMessage={errors['email']?.message}
+            errorMessage={errors['identifier']?.message}
           />
         </View>
         <View
@@ -100,6 +110,7 @@ export default function Index() {
             autoComplete="off"
             autoCorrect={false}
             onChangeText={(value) => setValue('password', value)}
+            errorMessage={errors['password']?.message}
             {...register('password', {
               required: 'You must provide a password',
               minLength: 6,
@@ -118,12 +129,25 @@ export default function Index() {
             </Link>
           </View>
         </View>
+        {!!serverError && (
+          <Text
+            style={{
+              color: colors.dangerLight,
+              fontSize: fontSizes.md,
+              marginBottom: 24,
+              textAlign: 'center',
+            }}
+          >
+            {serverError}
+          </Text>
+        )}
         <View style={{ marginBottom: 40 }}>
           <Button
             buttonType="secondary"
             variant="fill"
             rounded
             loading={isLoading}
+            disabled={isLoading || rateLimited}
             onPress={handleSubmit(onSubmit)}
           >
             login
@@ -131,7 +155,7 @@ export default function Index() {
         </View>
         <View style={{ marginTop: '30%' }}>
           <Pressable onPress={() => {
-              dispatch(persistLoginDataForSignUp({ email: watch('email'), password: watch('password') }))
+              dispatch(persistLoginDataForSignUp({ email: watch('identifier'), password: watch('password') }))
               router.navigate('/(auth)/signup')
             }}
           >

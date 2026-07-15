@@ -1,44 +1,55 @@
-import { createContext, useContext, type PropsWithChildren } from 'react';
-import { useStorageState } from './useStorageState';
+import { useAppDispatch, useAppSelector } from '@/config/redux/hooks';
+import { useRestoreSessionMutation } from '@/features/auth/authApi';
+import { sessionRestorationFinished } from '@/features/auth/authFlowSlice';
+import { getRefreshToken } from '@/features/auth/tokenStorage';
+import { useEffect, type PropsWithChildren } from 'react';
 
-const AuthContext = createContext<{
-  signIn: () => void;
-  signOut: () => void;
-  session?: string | null;
-}>({
-  signIn: () => null,
-  signOut: () => null,
-  session: null,
-});
-
-// This hook can be used to access the user info.
+/**
+ * Read-only view of the auth session. Components never touch tokens directly;
+ * all token handling happens in the session layer and reauth middleware.
+ */
 export function useSession() {
-  const value = useContext(AuthContext);
-  if (process.env.NODE_ENV !== 'production') {
-    if (!value) {
-      throw new Error('useSession must be wrapped in a <SessionProvider />');
-    }
-  }
+  const { sessionStatus, user } = useAppSelector(state => state.auth)
 
-  return value;
+  return {
+    isInitializing: sessionStatus === 'initializing',
+    isAuthenticated: sessionStatus === 'authenticated',
+    user,
+  }
 }
 
+/**
+ * Restores the session once on startup: loads the stored refresh token and
+ * performs a single refresh. The app stays in the `initializing` state until
+ * restoration finishes, preventing protected-route flicker.
+ */
 export function SessionProvider({ children }: PropsWithChildren) {
-  const [[isLoading, session], setSession] = useStorageState('session');
+  const dispatch = useAppDispatch()
+  const [restoreSession] = useRestoreSessionMutation()
 
-  return (
-    <AuthContext.Provider
-      value={{
-        signIn: () => {
-          // Perform sign-in logic here
-          setSession('xxx');
-        },
-        signOut: () => {
-          setSession(null);
-        },
-        session,
-      }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  useEffect(() => {
+    let cancelled = false
+
+    async function restore() {
+      try {
+        const refreshToken = await getRefreshToken()
+
+        if (refreshToken && !cancelled) {
+          await restoreSession().unwrap()
+        }
+      } catch {
+        // restoreSession already cleared local auth state
+      } finally {
+        dispatch(sessionRestorationFinished())
+      }
+    }
+
+    restore()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return <>{children}</>
 }

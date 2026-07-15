@@ -15,7 +15,7 @@ interface Inputs {
 
 export default function SignUpScreen() {
   const router = useRouter()
-  const { email, password } = useAppSelector(state => state.auth)
+  const { signupEmail: email, signupPassword: password } = useAppSelector(state => state.auth)
   const {
     register,
     handleSubmit,

@@ -1,5 +1,5 @@
 import { store } from "@/config/redux/store";
-import { SessionProvider } from "@/hooks/useSession";
+import { SessionProvider, useSession } from "@/hooks/useSession";
 import { Slot, SplashScreen } from "expo-router";
 import { useEffect } from "react";
 import 'react-native-gesture-handler';
@@ -9,17 +9,25 @@ import { Provider } from "react-redux";
 
 SplashScreen.preventAutoHideAsync()
 
-export default function RootLayout() {
-  useEffect(() => {
-    setTimeout(() => {
-      SplashScreen.hideAsync()
-    }, 5000)
-  }, [])
+/** Keeps the splash visible until session restoration finishes. */
+function SplashController() {
+  const { isInitializing } = useSession()
 
+  useEffect(() => {
+    if (!isInitializing) {
+      SplashScreen.hideAsync()
+    }
+  }, [isInitializing])
+
+  return null
+}
+
+export default function RootLayout() {
   return (
     <Provider store={store}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SessionProvider>
+          <SplashController />
           <Slot />
         </SessionProvider>
       </GestureHandlerRootView>
