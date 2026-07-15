@@ -1,0 +1,27 @@
+appId: com.digitalnomade.todo
+name: Registration validation smoke test
+tags:
+  - smoke
+  - auth
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-create-account-link"
+- assertVisible:
+    id: "signup-screen"
+- tapOn:
+    id: "signup-email-input"
+- inputText: "maestro@example.com"
+- tapOn:
+    id: "signup-password-input"
+- inputText: "valid-password"
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "different-password"
+- hideKeyboard
+- tapOn:
+    id: "signup-next-button"
+- assertVisible: "Your passwords doesn`t match"
+- assertNotVisible:
+    id: "signup-profile-screen"

@@ -46,6 +46,7 @@ export default function RootLayout() {
         options={{ 
           headerShown: false,
           title: '',
+          tabBarTestID: 'home-tab',
           tabBarIcon: ({ focused,  }) => <Entypo name='home' size={24} color={getFocusedColor(focused)} />
         }}
         
@@ -54,6 +55,7 @@ export default function RootLayout() {
         name='(dashboard)'
         options={{
           title: '',
+          tabBarTestID: 'dashboard-tab',
           tabBarIcon: ({ focused }) => <MaterialCommunityIcons name='view-dashboard' size={24} color={getFocusedColor(focused)} />
         }}
       />
@@ -61,6 +63,7 @@ export default function RootLayout() {
         name='profile'
         options={{
           title: '',
+          tabBarTestID: 'profile-tab',
           tabBarIcon: ({ focused }) => <FontAwesome name='user-circle-o' size={24} color={getFocusedColor(focused)} />
         }}
       />

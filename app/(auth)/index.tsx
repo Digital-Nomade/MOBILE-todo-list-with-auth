@@ -123,6 +123,7 @@ export default function Index() {
           />
           <View>
             <Link
+              testID="login-forgot-password-link"
               style={{
                 color: colors.dangerLight,
                 fontSize: fontSizes.md,

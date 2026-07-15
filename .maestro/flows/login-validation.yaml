@@ -1,0 +1,20 @@
+appId: com.digitalnomade.todo
+name: Login validation smoke test
+tags:
+  - smoke
+  - auth
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "login-screen"
+- assertVisible:
+    id: "login-identifier-input"
+- assertVisible:
+    id: "login-password-input"
+- tapOn:
+    id: "login-submit-button"
+- assertVisible: "You must provide your email or username"
+- assertVisible: "You must provide a password"
+- assertNotVisible:
+    id: "home-screen"

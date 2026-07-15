@@ -61,6 +61,7 @@ export default function Details() {
       <TodoDetails todo={todo} showCancel={false} isEditing />
       <View style={{ marginTop: 16 }}>
         <Button
+          testID="todo-delete-button"
           buttonType="danger"
           variant="outlined"
           loading={isDeleting}

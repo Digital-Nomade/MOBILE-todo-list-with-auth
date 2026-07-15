@@ -1,0 +1,29 @@
+appId: com.digitalnomade.todo
+name: Password and verification deep-link states
+tags:
+  - smoke
+  - auth
+  - deep-link
+---
+- launchApp:
+    clearState: true
+- openLink: "myapp://reset-password"
+- extendedWaitUntil:
+    visible:
+      id: "reset-password-invalid-link-screen"
+    timeout: 10000
+- assertVisible: "This reset link is incomplete.*"
+- tapOn:
+    id: "reset-password-request-link-button"
+- assertVisible:
+    id: "forgot-password-screen"
+- openLink: "myapp://verify-email"
+- extendedWaitUntil:
+    visible:
+      id: "verify-email-screen"
+    timeout: 10000
+- assertVisible: "This verification link is incomplete.*"
+- tapOn:
+    id: "verify-email-resend-button"
+- assertVisible:
+    id: "check-email-screen"
