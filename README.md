@@ -64,3 +64,16 @@ npm run e2e
 Backend-dependent authentication and todo flows require an active test account.
 See [`.maestro/README.md`](.maestro/README.md) for installation, Android setup,
 credentials, tags, and debugging instructions.
+
+## Storybook Web
+
+Run the isolated React Native component catalog in a browser:
+
+```bash
+npm run storybook
+```
+
+Use `npm run storybook:check` to verify that all tracked components have a
+co-located story, or `npm run storybook:build` to generate the static catalog
+in `storybook-static/`. Both checks run in the Husky pre-commit verification;
+Maestro E2E flows remain excluded.

@@ -35,6 +35,10 @@ const config: StorybookConfig = {
             fileURLToPath(new URL('.', import.meta.url)),
             'mocks/date-time-picker.tsx',
           ),
+          '@/features/todos/todoApi': resolve(
+            fileURLToPath(new URL('.', import.meta.url)),
+            'mocks/todo-api.ts',
+          ),
           '@': resolve(fileURLToPath(new URL('.', import.meta.url)), '..'),
         },
       },
