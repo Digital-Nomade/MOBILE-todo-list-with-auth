@@ -1,9 +1,9 @@
 import { Button, Input } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
-import { useAppSelector } from "@/config/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
+import { persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Pressable, Text, View } from "react-native";
 
@@ -15,6 +15,7 @@ interface Inputs {
 
 export default function SignUpScreen() {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const { signupEmail: email, signupPassword: password } = useAppSelector(state => state.auth)
   const {
     register,
@@ -25,14 +26,10 @@ export default function SignUpScreen() {
       errors
     }
   } = useForm<Inputs>()
-  const [loading, setLoading] = useState(false)
 
-  function onSubmit(data: unknown) {
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      router.navigate('/(auth)/signup-profile')
-    }, 2000)
+  function onSubmit(data: Inputs) {
+    dispatch(persistLoginDataForSignUp({ email: data.email, password: data.password }))
+    router.navigate('/(auth)/signup-profile')
   }
 
   const { colors, fontSizes } = StylesGuide
@@ -112,10 +109,11 @@ export default function SignUpScreen() {
             autoComplete="off"
             autoCorrect={false}
             onChangeText={(retypepassword) => setValue('retypePassword', retypepassword)}
-            errorMessage={errors['password']?.message}
-            {...register('password',
+            errorMessage={errors['retypePassword']?.message}
+            {...register('retypePassword',
               { 
-                required: true, validate: (data: unknown) => {
+                required: 'You must retype your password',
+                validate: (data: string) => {
                   if(watch('password') !== data) {
                     return 'Your passwords doesn`t match'
                   }
@@ -129,7 +127,6 @@ export default function SignUpScreen() {
             buttonType="secondary"
             variant="fill"
             rounded
-            loading={loading}
             onPress={handleSubmit(onSubmit)}
           >
             next
