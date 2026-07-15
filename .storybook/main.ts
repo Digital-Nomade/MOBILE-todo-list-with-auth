@@ -27,6 +27,14 @@ const config: StorybookConfig = {
     return mergeConfig(baseConfig, {
       resolve: {
         alias: {
+          'expo-router': resolve(
+            fileURLToPath(new URL('.', import.meta.url)),
+            'mocks/expo-router.ts',
+          ),
+          'react-native-modal-datetime-picker': resolve(
+            fileURLToPath(new URL('.', import.meta.url)),
+            'mocks/date-time-picker.tsx',
+          ),
           '@': resolve(fileURLToPath(new URL('.', import.meta.url)), '..'),
         },
       },
