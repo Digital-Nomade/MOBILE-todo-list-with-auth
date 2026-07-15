@@ -64,6 +64,10 @@ export default function RootLayout() {
           tabBarIcon: ({ focused }) => <FontAwesome name='user-circle-o' size={24} color={getFocusedColor(focused)} />
         }}
       />
+      <Tabs.Screen
+        name='change-password'
+        options={{ href: null }}
+      />
     </Tabs>
   )
 }
