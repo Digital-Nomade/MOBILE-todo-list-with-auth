@@ -29,7 +29,7 @@ function toISOString(value: Date | string | null | undefined): string | null | u
   return value instanceof Date ? value.toISOString() : value
 }
 
-const todoApi = api.injectEndpoints({
+export const todoApi = api.injectEndpoints({
   overrideExisting: true,
   endpoints: build => ({
     fetchTodos: build.query<PaginatedTodos, TodoPaginationInput | void>({

@@ -49,6 +49,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return <>{children}</>

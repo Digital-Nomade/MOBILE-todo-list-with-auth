@@ -104,6 +104,8 @@ export const authApi = api.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled
+        } catch {
+          // the failure surfaces via the mutation result
         } finally {
           // even a network or expired-token failure must not trap the user
           // in a stale session
@@ -117,6 +119,8 @@ export const authApi = api.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled
+        } catch {
+          // the failure surfaces via the mutation result
         } finally {
           await clearSession(dispatch)
         }
