@@ -11,7 +11,13 @@
     "test": "jest --watchAll",
     "test:ci": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "e2e": "maestro test --config=.maestro/config.yaml --include-tags=smoke .maestro",
+    "e2e:backend": "maestro test --config=.maestro/config.yaml --include-tags=requires-backend .maestro",
+    "e2e:all": "maestro test --config=.maestro/config.yaml .maestro",
+    "e2e:studio": "maestro studio",
+    "e2e:build:ios": "expo run:ios",
+    "e2e:build:android": "expo run:android"
   },
   "jest": {
     "preset": "jest-expo",

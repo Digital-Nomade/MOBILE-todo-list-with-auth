@@ -48,3 +48,19 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## End-to-end tests
+
+This project uses Maestro against standalone iOS/Android builds:
+
+```bash
+# Build and install on the iOS Simulator
+EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3000/graphql npm run e2e:build:ios
+
+# In another terminal, run backend-independent smoke flows
+npm run e2e
+```
+
+Backend-dependent authentication and todo flows require an active test account.
+See [`.maestro/README.md`](.maestro/README.md) for installation, Android setup,
+credentials, tags, and debugging instructions.
