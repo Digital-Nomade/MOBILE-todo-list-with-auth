@@ -109,7 +109,7 @@ export default function Profile() {
 
   return (
     <GlobalWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView testID="profile-screen" showsVerticalScrollIndicator={false}>
         <Text
           style={{
             color: colors.dangerLight,
@@ -131,6 +131,7 @@ export default function Profile() {
         </Text>
         <View style={{ marginBottom: 32 }}>
           <Input
+            testID="profile-name-input"
             placeholder="name"
             autoCapitalize="words"
             autoComplete="off"
@@ -143,6 +144,7 @@ export default function Profile() {
         </View>
         <View style={{ marginBottom: 32 }}>
           <Input
+            testID="profile-last-name-input"
             placeholder="last name"
             autoCapitalize="words"
             autoComplete="off"
@@ -155,6 +157,7 @@ export default function Profile() {
         </View>
         <View style={{ marginBottom: 32 }}>
           <Input
+            testID="profile-picture-input"
             placeholder="profile picture URL"
             autoCapitalize="none"
             autoComplete="off"
@@ -176,6 +179,7 @@ export default function Profile() {
             birthdate
           </Text>
           <DatePicker
+            testID="profile-birthdate-picker"
             onChange={(date) => setValue('birthdate', date, { shouldDirty: true })}
             value={watch('birthdate')}
             mode="date"
@@ -195,6 +199,7 @@ export default function Profile() {
         )}
         <View style={{ marginBottom: 16 }}>
           <Button
+            testID="profile-save-button"
             buttonType="success"
             variant="outlined"
             loading={isSaving}
@@ -206,6 +211,7 @@ export default function Profile() {
         </View>
         <View style={{ marginBottom: 16 }}>
           <Button
+            testID="profile-change-password-button"
             buttonType="secondary"
             variant="outlined"
             onPress={() => router.navigate('/(home)/change-password')}
@@ -215,6 +221,7 @@ export default function Profile() {
         </View>
         <View style={{ marginBottom: 16 }}>
           <Button
+            testID="profile-logout-button"
             buttonType="primary"
             variant="fill"
             loading={isLoggingOut}
@@ -225,6 +232,7 @@ export default function Profile() {
           </Button>
         </View>
         <Button
+          testID="profile-logout-all-button"
           buttonType="danger"
           variant="outlined"
           loading={isLoggingOutAll}

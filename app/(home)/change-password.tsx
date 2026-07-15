@@ -58,7 +58,10 @@ export default function ChangePasswordScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+      <View
+        testID="change-password-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -80,6 +83,7 @@ export default function ChangePasswordScreen() {
         </Text>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="change-password-current-input"
             placeholder="current password"
             keyboardType="visible-password"
             secureTextEntry
@@ -94,6 +98,7 @@ export default function ChangePasswordScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="change-password-new-input"
             placeholder="new password"
             keyboardType="visible-password"
             secureTextEntry
@@ -113,6 +118,7 @@ export default function ChangePasswordScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="change-password-confirm-input"
             placeholder="retype new password"
             keyboardType="visible-password"
             secureTextEntry
@@ -144,6 +150,7 @@ export default function ChangePasswordScreen() {
           </Text>
         )}
         <Button
+          testID="change-password-submit-button"
           buttonType="secondary"
           variant="fill"
           rounded

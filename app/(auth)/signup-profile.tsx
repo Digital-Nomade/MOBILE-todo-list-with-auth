@@ -79,7 +79,10 @@ export default function SignUpProfileScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%', }} >
+      <View
+        testID="signup-profile-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%', }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -93,6 +96,7 @@ export default function SignUpProfileScreen() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-name-input"
             placeholder="name"
             keyboardType="default"
             autoCapitalize="words"
@@ -114,6 +118,7 @@ export default function SignUpProfileScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="signup-last-name-input"
             placeholder="last name"
             keyboardType="default"
             autoCapitalize="words"
@@ -134,6 +139,7 @@ export default function SignUpProfileScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="signup-username-input"
             placeholder="username"
             keyboardType="default"
             autoCapitalize="none"
@@ -156,6 +162,7 @@ export default function SignUpProfileScreen() {
             birthdate
           </Text>
           <DatePicker
+            testID="signup-birthdate-picker"
             onChange={(date) => setValue('birthdate', date)}
             value={watch('birthdate')}
             mode="date"
@@ -175,6 +182,7 @@ export default function SignUpProfileScreen() {
         )}
         <View style={{ marginBottom: 40 }}>
           <Button
+            testID="signup-submit-button"
             buttonType="secondary"
             variant="fill"
             rounded

@@ -67,7 +67,10 @@ export default function VerifyEmailScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+      <View
+        testID="verify-email-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -91,6 +94,7 @@ export default function VerifyEmailScreen() {
               Your email has been verified. You can now sign in to your account.
             </Text>
             <Button
+              testID="verify-email-login-button"
               buttonType="secondary"
               variant="fill"
               rounded
@@ -107,6 +111,7 @@ export default function VerifyEmailScreen() {
               This verification link is incomplete. Please open the link from your email again or request a new one.
             </Text>
             <Button
+              testID="verify-email-resend-button"
               buttonType="secondary"
               variant="fill"
               rounded
@@ -122,6 +127,7 @@ export default function VerifyEmailScreen() {
             <Text style={textStyle}>{errorMessage}</Text>
             <View style={{ marginBottom: 24 }}>
               <Button
+                testID="verify-email-retry-button"
                 buttonType="secondary"
                 variant="fill"
                 rounded
@@ -131,6 +137,7 @@ export default function VerifyEmailScreen() {
               </Button>
             </View>
             <Button
+              testID="verify-email-request-link-button"
               buttonType="secondary"
               variant="outlined"
               rounded

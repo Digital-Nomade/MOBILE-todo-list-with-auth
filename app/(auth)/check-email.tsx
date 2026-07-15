@@ -38,7 +38,10 @@ export default function CheckEmailScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+      <View
+        testID="check-email-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -60,6 +63,7 @@ export default function CheckEmailScreen() {
         </Text>
         <View style={{ marginBottom: 24 }}>
           <Input
+            testID="resend-verification-email-input"
             placeholder="email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -83,6 +87,7 @@ export default function CheckEmailScreen() {
         )}
         <View style={{ marginBottom: 40 }}>
           <Button
+            testID="resend-verification-submit-button"
             buttonType="secondary"
             variant="fill"
             rounded

@@ -37,6 +37,7 @@ export default function SignUpScreen() {
   return (
     <GlobalWrapper>
       <View
+        testID="signup-screen"
         style={{
           flexDirection: 'column',
           justifyContent: 'center',
@@ -56,6 +57,7 @@ export default function SignUpScreen() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-email-input"
             placeholder="email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -84,6 +86,7 @@ export default function SignUpScreen() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-password-input"
             defaultValue={password}
             style={{ marginBottom: 16 }}
             placeholder="password"
@@ -101,6 +104,7 @@ export default function SignUpScreen() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-confirm-password-input"
             style={{ marginBottom: 16 }}
             placeholder="retype password"
             keyboardType="visible-password"
@@ -124,6 +128,7 @@ export default function SignUpScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Button
+            testID="signup-next-button"
             buttonType="secondary"
             variant="fill"
             rounded

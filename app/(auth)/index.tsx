@@ -68,7 +68,10 @@ export default function Index() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%', }} >
+      <View
+        testID="login-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%', }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -82,6 +85,7 @@ export default function Index() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="login-identifier-input"
             placeholder="email or username"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -102,6 +106,7 @@ export default function Index() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="login-password-input"
             style={{ marginBottom: 16 }}
             placeholder="password"
             keyboardType="visible-password"
@@ -143,6 +148,7 @@ export default function Index() {
         )}
         <View style={{ marginBottom: 40 }}>
           <Button
+            testID="login-submit-button"
             buttonType="secondary"
             variant="fill"
             rounded
@@ -154,7 +160,9 @@ export default function Index() {
           </Button>
         </View>
         <View style={{ marginTop: '30%' }}>
-          <Pressable onPress={() => {
+          <Pressable
+            testID="login-create-account-link"
+            onPress={() => {
               dispatch(persistLoginDataForSignUp({ email: watch('identifier'), password: watch('password') }))
               router.navigate('/(auth)/signup')
             }}

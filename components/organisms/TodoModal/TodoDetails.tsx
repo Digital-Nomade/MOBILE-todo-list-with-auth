@@ -70,6 +70,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
   return (
     <>
       <Input
+        testID="todo-title-input"
         style={{ marginBottom: 48, fontWeight: 300, }}
         placeholder="New to do"
         onChangeText={(text) => {
@@ -92,6 +93,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           Description
         </Text>
         <Input
+          testID="todo-description-input"
           style={{ maxHeight: 250, marginBottom: 8 }}
           multiline
           numberOfLines={12}
@@ -158,6 +160,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
         }}
       >
         {showCancel && <Button
+          testID="todo-cancel-button"
           style={{ opacity: loading ? 0.5 : 1 }}
           buttonType="danger"
           variant="outlined"
@@ -168,6 +171,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           Cancel
         </Button>}
         <Button
+          testID="todo-save-button"
           style={{ opacity: loading || !isDirty ? 0.5 : 1 }}
           buttonType="success"
           variant="outlined"

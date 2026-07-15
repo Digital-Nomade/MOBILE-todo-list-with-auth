@@ -5,6 +5,7 @@ import React, { ReactNode, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 interface Props {
+  testID?: string
   onChange: (value: Date) => void
   minimumDate?: Date
   maxDate?: Date
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function DatePicker({
+  testID,
   onChange,
   minimumDate,
   maxDate,
@@ -55,6 +57,7 @@ export function DatePicker({
     >
       {Icon ?? <CalendarIcon />}
       <Pressable
+        testID={testID}
         style={{ borderRadius: 8 }}
         onPress={() => setShow(state => !state)}
       >

@@ -51,7 +51,10 @@ export default function ForgotPasswordScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+      <View
+        testID="forgot-password-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -73,6 +76,7 @@ export default function ForgotPasswordScreen() {
         </Text>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="forgot-password-email-input"
             placeholder="email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -108,6 +112,7 @@ export default function ForgotPasswordScreen() {
           </Text>
         )}
         <Button
+          testID="forgot-password-submit-button"
           buttonType="secondary"
           variant="fill"
           rounded

@@ -11,7 +11,10 @@ export default function HomeScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <View
+        testID="home-screen"
+        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}
+      >
         <Text
           style={{
             fontSize: StylesGuide.fontSizes.xll,
@@ -25,7 +28,11 @@ export default function HomeScreen() {
           <NotificationIcon hasNotification />
         </Pressable>
       </View>
-      <Pressable style={{ marginBottom: 26 }} onPress={() => router.push('/addTodoModal')}>
+      <Pressable
+        testID="add-todo-button"
+        style={{ marginBottom: 26 }}
+        onPress={() => router.push('/addTodoModal')}
+      >
         <PlusIcon />
       </Pressable>
       <TodoNavigator />

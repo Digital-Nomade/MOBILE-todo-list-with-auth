@@ -60,7 +60,10 @@ export default function ResetPasswordScreen() {
   if (!token) {
     return (
       <GlobalWrapper>
-        <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+        <View
+          testID="reset-password-invalid-link-screen"
+          style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+        >
           <Text
             style={{
               color: colors.dangerLight,
@@ -81,6 +84,7 @@ export default function ResetPasswordScreen() {
             This reset link is incomplete. Please open the link from your email again or request a new one.
           </Text>
           <Button
+            testID="reset-password-request-link-button"
             buttonType="secondary"
             variant="fill"
             rounded
@@ -95,7 +99,10 @@ export default function ResetPasswordScreen() {
 
   return (
     <GlobalWrapper>
-      <View style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+      <View
+        testID="reset-password-screen"
+        style={{ flexDirection: 'column', justifyContent: 'center', height: '100%' }}
+      >
         <Text
           style={{
             color: colors.dangerLight,
@@ -107,6 +114,7 @@ export default function ResetPasswordScreen() {
         </Text>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="reset-password-new-input"
             placeholder="new password"
             keyboardType="visible-password"
             secureTextEntry
@@ -127,6 +135,7 @@ export default function ResetPasswordScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Input
+            testID="reset-password-confirm-input"
             placeholder="retype new password"
             keyboardType="visible-password"
             secureTextEntry
@@ -158,6 +167,7 @@ export default function ResetPasswordScreen() {
           </Text>
         )}
         <Button
+          testID="reset-password-submit-button"
           buttonType="secondary"
           variant="fill"
           rounded
