@@ -69,12 +69,13 @@ export function TodoNavigator() {
 
   async function handleCheckTodo(todo: Todo, isChecked: boolean) {
     try {
-      const response = await updateTodo({ ...todo, done: isChecked })
-      console.log(response)
-    } catch(error: any) {
-      console.log('Algum erro ocorreu')
+      await updateTodo({ id: todo.id, done: isChecked }).unwrap()
+    } catch {
+      // list refetch (cache invalidation) restores the real state
     }
   }
+
+  const currentTodo: Todo | undefined = todos[todoIndex]
 
   return (
     <Fragment>
@@ -98,17 +99,17 @@ export function TodoNavigator() {
           >
             <View style={styles.mainContainer}>
                 <Text style={styles.titleText}>
-                  {todos[todoIndex]?.title ?? ''}
+                  {currentTodo?.title ?? ''}
                 </Text>
                 <CheckBox
-                  checked={todos[todoIndex]?.done}
-                  onCheck={(isChecked) => handleCheckTodo(todos[todoIndex], isChecked)}
+                  checked={currentTodo?.done}
+                  onCheck={(isChecked) => currentTodo && handleCheckTodo(currentTodo, isChecked)}
                   color={StylesGuide.colors.success}
                 />
             </View>
             <View style={styles.reminderDueToContainer}>
               {
-                !!todos[todoIndex]?.reminderOn && (
+                !!currentTodo?.reminderOn && (
                   <View style={styles.reminderContainer}>
                     <MaterialIcons
                       name="access-alarm"
@@ -116,11 +117,11 @@ export function TodoNavigator() {
                       color={StylesGuide.colors.dangerLight} 
                     />
                     <Text style={styles.reminderText}>
-                      {format(todos[todoIndex].reminderOn, 'hh:mm M/d/yyyy')}
+                      {format(currentTodo.reminderOn, 'hh:mm M/d/yyyy')}
                     </Text>
                   </View>
               )}
-              {!!todos[todoIndex]?.dueTo && (
+              {!!currentTodo?.dueTo && (
                 <View style={styles.dueToContainer}>
                   <MaterialCommunityIcons
                     name="calendar-clock"
@@ -128,23 +129,23 @@ export function TodoNavigator() {
                     color={StylesGuide.colors.dangerLight}
                   />
                   <Text style={styles.dueToText}>
-                    {format(todos[todoIndex].dueTo, 'M/d/yyyy')}
+                    {format(currentTodo.dueTo, 'M/d/yyyy')}
                   </Text>
                 </View>
               )}
             </View>
             <ScrollView style={styles.descriptionScrollView}>
               <Text style={styles.descriptionText}>
-                {!!todos[todoIndex]?.description ? todos[todoIndex].description : 'No description'}
+                {!!currentTodo?.description ? currentTodo.description : 'No description'}
               </Text>
             </ScrollView>
             {
-              todos[todoIndex]?.createdAt && (
+              !!currentTodo?.createdAt && (
               <View style={styles.createdAtContainer}>
                 <Text style={styles.createdAtText}>
                   created at: 
                   <Text style={styles.createdAtTextVariant}>
-                    {format(todos[todoIndex].createdAt, 'M/dd/yyyy')}
+                    {format(currentTodo.createdAt, 'M/dd/yyyy')}
                   </Text>
                 </Text>
               </View>

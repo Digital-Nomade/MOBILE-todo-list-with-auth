@@ -1,7 +1,7 @@
 import { TodoItem } from "@/components/features/Dashboard/TodoItem/TodoItem";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { StylesGuide } from "@/constants/StyleGuide";
-import { useFetchTodosQuery } from "@/features/todos/todoApi";
+import { useFetchTodosQuery, useUpdateTodoMutation } from "@/features/todos/todoApi";
 import { useDebouncer } from "@/hooks/useDebouncer";
 import { Todo } from "@/types/todo-types";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -16,6 +16,7 @@ export default function DashboardScreen() {
   const debouncedValue = useDebouncer(query, 800)
   const [loading, setLoading] = useState(false)
   const { data, isLoading, isFetching, refetch } = useFetchTodosQuery()
+  const [updateTodo] = useUpdateTodoMutation()
   const [todos, setTodos] = useState<Todo[]>([])
 
   useEffect(() => {
@@ -32,10 +33,14 @@ export default function DashboardScreen() {
     if (data?.data.length) {
       setTodos(data.data)
     }
-  }, [todos])
+  }, [data])
 
-  function handleCheckSubmit(todoId: string, isChecked: boolean) {
-    
+  async function handleCheckSubmit(todoId: string, isChecked: boolean) {
+    try {
+      await updateTodo({ id: todoId, done: isChecked }).unwrap()
+    } catch {
+      // list refetch (cache invalidation) restores the real state
+    }
   }
 
   function onRefresh() {

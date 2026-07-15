@@ -37,40 +37,33 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
     if (todo) {
       setValue('description', todo.description)
       setValue('title', todo.title)
-      setValue('dueTo', todo?.dueTo)
-      setValue('reminderOn', todo?.reminderOn)
+      setValue('dueTo', todo.dueTo ? new Date(todo.dueTo) : undefined)
+      setValue('reminderOn', todo.reminderOn ? new Date(todo.reminderOn) : undefined)
     }
   }, [todo])
 
-  async function onSubmit(data: TodoCreationPayload ) {
-    console.log('click')
-    if (isEditing) {
-      const updatedTodo = {
-        ...todo,
-        ...data,
-      }
-
-      onUpdateTodo(updatedTodo)
+  async function onSubmit(data: TodoCreationPayload) {
+    if (isEditing && todo) {
+      await onUpdateTodo(todo.id, data)
     } else {
-      onCreateTodo(data)
+      await onCreateTodo(data)
     }
     router.dismiss()
   }
 
-  async function onCreateTodo(todo: TodoCreationPayload) {
+  async function onCreateTodo(data: TodoCreationPayload) {
     try {
-      const result = await createTodo(todo)
-      console.log(result)
-    } catch (error: any) {
-      console.log(error)
+      await createTodo(data).unwrap()
+    } catch {
+      // the list is refetched via cache invalidation only on success
     }
   }
 
-  async function onUpdateTodo(todo: Todo) {
+  async function onUpdateTodo(id: string, data: TodoCreationPayload) {
     try {
-      const result = await updateTodo(todo)
-    } catch (error: any) {
-
+      await updateTodo({ id, ...data }).unwrap()
+    } catch {
+      // the list is refetched via cache invalidation only on success
     }
   }
 
