@@ -1,21 +1,22 @@
 import CheckEmailScreen from '@/app/(auth)/check-email'
-import VerifyEmailScreen from '@/app/(auth)/verify-email'
+import {
+  clearStoredVerificationFlow,
+  loadVerificationFlow,
+  saveVerificationFlow,
+  type VerificationFlowSnapshot,
+} from '@/features/auth/verificationFlowStorage'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 
 const mockDispatch = jest.fn()
 const mockVerifyEmail = jest.fn()
 const mockResendVerification = jest.fn()
 const mockReplace = jest.fn()
-let mockSearchParams: { token?: string } = {}
+let mockVerifyLoading = false
 let mockAuthState: {
-  signupEmail: string
-  user: {
-    id: string
-    email: string
-    username: string
-    status: 'PENDING_VERIFICATION'
-    emailVerifiedAt: null
-  } | null
+  user: { email: string } | null
+  verificationEmail: string
+  verificationMessage: string
+  verificationResendAvailableAt: number | null
 }
 
 jest.mock('@/config/redux/hooks', () => ({
@@ -25,7 +26,7 @@ jest.mock('@/config/redux/hooks', () => ({
 }))
 
 jest.mock('@/features/auth/authApi', () => ({
-  useVerifyEmailMutation: () => [mockVerifyEmail],
+  useVerifyEmailMutation: () => [mockVerifyEmail, { isLoading: mockVerifyLoading }],
   useResendVerificationMutation: () => [
     mockResendVerification,
     { isLoading: false },
@@ -33,7 +34,6 @@ jest.mock('@/features/auth/authApi', () => ({
 }))
 
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => mockSearchParams,
   useRouter: () => ({ replace: mockReplace }),
 }))
 
@@ -45,138 +45,190 @@ const verifiedUser = {
   emailVerifiedAt: '2026-07-15T00:00:00.000Z',
 }
 
-describe('email verification screens', () => {
+describe('confirmation-code screen', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockSearchParams = {}
+    clearStoredVerificationFlow()
+    mockVerifyLoading = false
     mockAuthState = {
-      signupEmail: 'user@example.com',
       user: null,
+      verificationEmail: 'user@example.com',
+      verificationMessage: 'Enter the code sent to your email.',
+      verificationResendAvailableAt: null,
     }
+    mockVerifyEmail.mockReturnValue({
+      unwrap: jest.fn().mockResolvedValue(verifiedUser),
+    })
+    mockResendVerification.mockReturnValue({
+      unwrap: jest.fn().mockResolvedValue({
+        message: 'If eligible, a new confirmation code has been sent.',
+      }),
+    })
   })
 
-  describe('VerifyEmailScreen', () => {
-    it('renders the missing-token state without calling the mutation', async () => {
-      render(<VerifyEmailScreen />)
+  it('accepts six digits, preserves leading zeroes, and submits email with code', async () => {
+    render(<CheckEmailScreen />)
 
-      expect(
-        await screen.findByText(/This verification link is incomplete/)
-      ).toBeTruthy()
-      expect(mockVerifyEmail).not.toHaveBeenCalled()
+    expect(screen.getByText('Enter the code sent to your email.')).toBeTruthy()
+    const codeInput = screen.getByLabelText('Six-digit confirmation code')
+    fireEvent.changeText(codeInput, '00a1234567')
 
-      fireEvent.press(screen.getByText('resend verification email'))
-      expect(mockReplace).toHaveBeenCalledWith('/(auth)/check-email')
-    })
+    expect(screen.getByDisplayValue('001234')).toBeTruthy()
+    fireEvent.press(screen.getByText('confirm code'))
 
-    it('consumes the query token and renders success', async () => {
-      mockSearchParams = { token: 'verification-token' }
-      mockVerifyEmail.mockReturnValue({
-        unwrap: jest.fn().mockResolvedValue(verifiedUser),
-      })
-
-      render(<VerifyEmailScreen />)
-
+    await waitFor(() => {
       expect(mockVerifyEmail).toHaveBeenCalledWith({
-        token: 'verification-token',
-      })
-      expect(
-        await screen.findByText(/Your email has been verified/)
-      ).toBeTruthy()
-
-      fireEvent.press(screen.getByText('go to login'))
-      expect(mockReplace).toHaveBeenCalledWith('/(auth)')
-    })
-
-    it('updates the current pending-user snapshot after verification', async () => {
-      mockSearchParams = { token: 'verification-token' }
-      mockAuthState.user = {
-        id: verifiedUser.id,
-        email: verifiedUser.email,
-        username: verifiedUser.username,
-        status: 'PENDING_VERIFICATION',
-        emailVerifiedAt: null,
-      }
-      mockVerifyEmail.mockReturnValue({
-        unwrap: jest.fn().mockResolvedValue(verifiedUser),
-      })
-
-      render(<VerifyEmailScreen />)
-
-      await screen.findByText(/Your email has been verified/)
-      expect(mockDispatch).toHaveBeenCalledWith({
-        type: 'auth/setUserSnapshot',
-        payload: verifiedUser,
+        email: 'user@example.com',
+        code: '001234',
       })
     })
+    expect(await screen.findByText(/Your email has been confirmed/)).toBeTruthy()
 
-    it('shows invalid-token feedback and allows one explicit retry', async () => {
-      mockSearchParams = { token: 'expired-token' }
-      mockVerifyEmail
-        .mockReturnValueOnce({
-          unwrap: jest.fn().mockRejectedValue({
-            code: 'BAD_USER_INPUT',
-            message: 'environment-specific backend wording',
-          }),
-        })
-        .mockReturnValueOnce({
-          unwrap: jest.fn().mockResolvedValue(verifiedUser),
-        })
+    fireEvent.press(screen.getByText('go to login'))
+    expect(mockReplace).toHaveBeenCalledWith('/(auth)')
+  })
 
-      render(<VerifyEmailScreen />)
+  it('validates that the code contains exactly six digits', async () => {
+    render(<CheckEmailScreen />)
 
-      expect(
-        await screen.findByText('This verification link is invalid or has expired.')
-      ).toBeTruthy()
-      expect(
-        screen.queryByText('environment-specific backend wording')
-      ).toBeNull()
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '12345')
+    fireEvent.press(screen.getByText('confirm code'))
 
-      fireEvent.press(screen.getByText('try again'))
+    expect(await screen.findByText('Enter the six-digit confirmation code.')).toBeTruthy()
+    expect(mockVerifyEmail).not.toHaveBeenCalled()
+  })
 
-      expect(
-        await screen.findByText(/Your email has been verified/)
-      ).toBeTruthy()
-      expect(mockVerifyEmail).toHaveBeenCalledTimes(2)
+  it('shows a safe invalid-or-expired error from UNAUTHENTICATED', async () => {
+    mockVerifyEmail.mockReturnValue({
+      unwrap: jest.fn().mockRejectedValue({
+        code: 'UNAUTHENTICATED',
+        message: 'environment-specific backend wording',
+      }),
+    })
+
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '123456')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    expect(await screen.findByText('Invalid or expired code')).toBeTruthy()
+    expect(screen.queryByText('environment-specific backend wording')).toBeNull()
+  })
+
+  it('temporarily disables verification after a rate-limit response', async () => {
+    mockVerifyEmail.mockReturnValue({
+      unwrap: jest.fn().mockRejectedValue({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many attempts.',
+      }),
+    })
+
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '123456')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    expect(await screen.findByText(/Too many attempts/)).toBeTruthy()
+    expect(screen.getByText(/try again in \d+s/)).toBeTruthy()
+  })
+
+  it('disables duplicate submissions while verification is loading', () => {
+    mockVerifyLoading = true
+
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '123456')
+    fireEvent.press(screen.getByTestId('verification-submit-button'))
+
+    expect(mockVerifyEmail).not.toHaveBeenCalled()
+    expect(
+      screen.getByTestId('verification-submit-button').props.accessibilityState
+    ).toEqual({ disabled: true })
+  })
+
+  it.each([
+    ['BAD_USER_INPUT', 'Check the email and enter a valid six-digit code.'],
+    ['UNKNOWN', 'Something went wrong. Please try again.'],
+  ])('maps %s failures to safe feedback', async (code, expectedMessage) => {
+    mockVerifyEmail.mockReturnValue({
+      unwrap: jest.fn().mockRejectedValue({ code, message: 'backend wording' }),
+    })
+
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '123456')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    expect(await screen.findByText(expectedMessage)).toBeTruthy()
+    expect(screen.queryByText('backend wording')).toBeNull()
+  })
+
+  it('resends with the email, clears the code, and retains the cooldown', async () => {
+    const view = render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '012345')
+    fireEvent.press(screen.getByText('resend code'))
+
+    await waitFor(() => {
+      expect(mockResendVerification).toHaveBeenCalledWith({
+        email: 'user@example.com',
+      })
+    })
+    expect(screen.getByTestId('verification-code-input').props.value).toBe('')
+    expect(
+      await screen.findByText('If eligible, a new confirmation code has been sent.')
+    ).toBeTruthy()
+    expect(
+      screen.getByText('A new code was sent. Your previous code no longer works.')
+    ).toBeTruthy()
+    expect(screen.getByText(/resend in \d+s/)).toBeTruthy()
+
+    const savedSnapshot = loadVerificationFlow()
+    expect(savedSnapshot).toEqual({
+      email: 'user@example.com',
+      message: 'If eligible, a new confirmation code has been sent.',
+      resendAvailableAt: expect.any(Number),
+    })
+    expect(savedSnapshot).not.toHaveProperty('code')
+
+    view.unmount()
+    saveVerificationFlow(savedSnapshot as VerificationFlowSnapshot)
+    mockAuthState.verificationEmail = ''
+    mockAuthState.verificationMessage = ''
+    render(<CheckEmailScreen />)
+
+    expect(screen.getByText(/resend in \d+s/)).toBeTruthy()
+  })
+
+  it('provides email entry and a signup recovery path on direct navigation', async () => {
+    mockAuthState.verificationEmail = ''
+    mockAuthState.verificationMessage = ''
+
+    render(<CheckEmailScreen />)
+
+    expect(screen.getByText(/Enter your registration email/)).toBeTruthy()
+    fireEvent.changeText(screen.getByLabelText('Registration email'), ' User@Example.COM ')
+    fireEvent.changeText(screen.getByLabelText('Six-digit confirmation code'), '654321')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    await waitFor(() => {
+      expect(mockVerifyEmail).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        code: '654321',
+      })
     })
   })
 
-  describe('CheckEmailScreen', () => {
-    it('prefills the known email and displays the generic resend response', async () => {
-      mockResendVerification.mockReturnValue({
-        unwrap: jest.fn().mockResolvedValue({
-          message: 'If eligible, a new verification email has been sent.',
-        }),
-      })
+  it('never stores or logs the confirmation code', async () => {
+    const consoleLog = jest.spyOn(console, 'log').mockImplementation(() => undefined)
 
-      render(<CheckEmailScreen />)
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '012345')
+    expect(loadVerificationFlow()).toBeNull()
+    fireEvent.press(screen.getByText('confirm code'))
 
-      expect(screen.getByDisplayValue('user@example.com')).toBeTruthy()
-      fireEvent.press(screen.getByText('resend verification email'))
+    await screen.findByText(/Your email has been confirmed/)
+    expect(loadVerificationFlow()).toBeNull()
+    expect(mockDispatch.mock.calls.flat()).not.toContainEqual(
+      expect.objectContaining({ payload: expect.objectContaining({ code: expect.anything() }) })
+    )
+    expect(consoleLog).not.toHaveBeenCalled()
 
-      await waitFor(() => {
-        expect(mockResendVerification).toHaveBeenCalledWith({
-          email: 'user@example.com',
-        })
-      })
-      expect(
-        await screen.findByText(
-          'If eligible, a new verification email has been sent.'
-        )
-      ).toBeTruthy()
-    })
-
-    it('requires an email before resending', async () => {
-      mockAuthState.signupEmail = ''
-
-      render(<CheckEmailScreen />)
-      fireEvent.press(screen.getByText('resend verification email'))
-
-      expect(
-        await screen.findByText(
-          'Enter your email to resend the verification message.'
-        )
-      ).toBeTruthy()
-      expect(mockResendVerification).not.toHaveBeenCalled()
-    })
+    consoleLog.mockRestore()
   })
 })

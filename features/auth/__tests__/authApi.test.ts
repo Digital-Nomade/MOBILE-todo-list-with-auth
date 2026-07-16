@@ -186,7 +186,7 @@ describe('authApi', () => {
   })
 
   describe('verifyEmail', () => {
-    it('consumes the token from its argument', async () => {
+    it('sends the normalized email and six-character code', async () => {
       fetchMock.mockResolvedValueOnce(graphqlSuccess({
         verifyEmail: {
           id: 'b3b8f9a0-1c2d-4e5f-8a9b-0c1d2e3f4a5b',
@@ -198,12 +198,38 @@ describe('authApi', () => {
       }))
 
       const result = await store.dispatch(
-        authApi.endpoints.verifyEmail.initiate({ token: 'verification-token' })
+        authApi.endpoints.verifyEmail.initiate({
+          email: 'user@example.com',
+          code: '012345',
+        })
       ).unwrap()
 
       const call = parseGraphQLCall(fetchMock.mock.calls[0])
-      expect(call.variables.input).toEqual({ token: 'verification-token' })
+      expect(call.variables.input).toEqual({
+        email: 'user@example.com',
+        code: '012345',
+      })
       expect(result.status).toBe('ACTIVE')
+      expect(call.headers.authorization).toBeUndefined()
+    })
+
+    it('resends verification with only the email', async () => {
+      fetchMock.mockResolvedValueOnce(graphqlSuccess({
+        resendVerificationEmail: {
+          message: 'If eligible, a new confirmation code has been sent.',
+        },
+      }))
+
+      const result = await store.dispatch(
+        authApi.endpoints.resendVerification.initiate({
+          email: 'user@example.com',
+        })
+      ).unwrap()
+
+      const call = parseGraphQLCall(fetchMock.mock.calls[0])
+      expect(call.variables.input).toEqual({ email: 'user@example.com' })
+      expect(call.variables.input).not.toHaveProperty('code')
+      expect(result.message).toBe('If eligible, a new confirmation code has been sent.')
     })
   })
 

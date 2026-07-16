@@ -38,6 +38,11 @@ export interface MessagePayload {
   message: string
 }
 
+export interface VerifyEmailInput {
+  email: string
+  code: string
+}
+
 export interface VerifiedUser {
   id: string
   email: string
@@ -54,6 +59,9 @@ export interface AuthState {
   user: AuthUserSnapshot | null
   signupEmail: string
   signupPassword: string
+  verificationEmail: string
+  verificationMessage: string
+  verificationResendAvailableAt: number | null
 }
 
 export interface LoginAccountPayload {

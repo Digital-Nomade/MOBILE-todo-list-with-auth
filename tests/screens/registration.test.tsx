@@ -1,4 +1,8 @@
 import SignUpProfileScreen from '@/app/(auth)/signup-profile'
+import {
+  clearStoredVerificationFlow,
+  loadVerificationFlow,
+} from '@/features/auth/verificationFlowStorage'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 
 const mockCreateUser = jest.fn()
@@ -9,7 +13,7 @@ const mockReplace = jest.fn()
 jest.mock('@/config/redux/hooks', () => ({
   useAppDispatch: () => mockDispatch,
   useAppSelector: () => ({
-    signupEmail: 'ada@example.com',
+    signupEmail: ' Ada@Example.COM ',
     signupPassword: 'secret-password',
   }),
 }))
@@ -45,6 +49,7 @@ jest.mock('@/components/atoms', () => {
 describe('SignUpProfileScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    clearStoredVerificationFlow()
     mockCreateUser.mockReturnValue({
       unwrap: jest.fn().mockResolvedValue({
         message: 'Check your email.',
@@ -90,9 +95,23 @@ describe('SignUpProfileScreen', () => {
       expect(mockReplace).toHaveBeenCalledWith('/(auth)/check-email')
     })
 
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'auth/setVerificationFlow',
+      payload: {
+        email: 'ada@example.com',
+        message: 'Check your email.',
+        resendAvailableAt: null,
+      },
+    })
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'auth/resetAuthState' })
     )
+    expect(loadVerificationFlow()).toEqual({
+      email: 'ada@example.com',
+      message: 'Check your email.',
+      resendAvailableAt: null,
+    })
+    expect(loadVerificationFlow()).not.toHaveProperty('code')
   })
 
   it('shows a generic error and does not navigate on failure', async () => {

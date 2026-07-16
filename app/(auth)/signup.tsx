@@ -3,6 +3,10 @@ import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { useAppDispatch, useAppSelector } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
 import { persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
+import {
+  clearStoredVerificationFlow,
+  normalizeVerificationEmail,
+} from "@/features/auth/verificationFlowStorage";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { Pressable, Text, View } from "react-native";
@@ -28,7 +32,11 @@ export default function SignUpScreen() {
   } = useForm<Inputs>()
 
   function onSubmit(data: Inputs) {
-    dispatch(persistLoginDataForSignUp({ email: data.email, password: data.password }))
+    clearStoredVerificationFlow()
+    dispatch(persistLoginDataForSignUp({
+      email: normalizeVerificationEmail(data.email),
+      password: data.password,
+    }))
     router.navigate('/(auth)/signup-profile')
   }
 

@@ -4,6 +4,7 @@ import {
   CreateUserInput,
   LoginInput,
   MessagePayload,
+  VerifyEmailInput,
   VerifiedUser,
 } from "./authTypes";
 import {
@@ -126,7 +127,7 @@ export const authApi = api.injectEndpoints({
         }
       },
     }),
-    verifyEmail: build.mutation<VerifiedUser, { token: string }>({
+    verifyEmail: build.mutation<VerifiedUser, VerifyEmailInput>({
       query: (input) => ({
         document: VERIFY_EMAIL_MUTATION,
         variables: { input },

@@ -27,7 +27,7 @@ prefer those IDs over visible text.
 ### iOS Simulator
 
 ```bash
-EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3000/graphql npm run e2e:build:ios
+EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3773/graphql npm run e2e:build:ios
 ```
 
 ### Android Emulator
@@ -35,7 +35,7 @@ EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3000/graphql npm run e2e:build:ios
 Android's emulator reaches the host through `10.0.2.2`:
 
 ```bash
-EXPO_PUBLIC_GRAPHQL_URL=http://10.0.2.2:3000/graphql npm run e2e:build:android
+EXPO_PUBLIC_GRAPHQL_URL=http://10.0.2.2:3773/graphql npm run e2e:build:android
 ```
 
 Keep Metro running after the build command.
@@ -54,11 +54,11 @@ They cover:
 
 - login validation;
 - registration validation;
-- missing-token reset-password and email-verification deep links.
+- missing-token reset-password deep links.
 
 ### Backend-dependent tests
 
-Start the backend on port 3000 and provide an active, verified test account.
+Start the backend on port 3773 and provide an active, verified test account.
 Do not commit credentials to this repository or place them in flow files.
 
 ```bash

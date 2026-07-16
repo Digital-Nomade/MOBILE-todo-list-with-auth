@@ -4,7 +4,11 @@ import { getErrorCode, getUserFacingMessage } from "@/config/graphql/errors";
 import { useAppDispatch, useAppSelector } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
 import { useCreateUserMutation } from "@/features/auth/authApi";
-import { resetAuthState } from "@/features/auth/authFlowSlice";
+import { resetAuthState, setVerificationFlow } from "@/features/auth/authFlowSlice";
+import {
+  normalizeVerificationEmail,
+  saveVerificationFlow,
+} from "@/features/auth/verificationFlowStorage";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -53,15 +57,19 @@ export default function SignUpProfileScreen() {
     try {
       // The response is a generic message only: never infer from it whether
       // an account already exists.
-      await createUser({
+      const email = normalizeVerificationEmail(signupEmail)
+      const { message } = await createUser({
         name: data.name,
         lastName: data.lastName,
         username: data.username,
         birthdate: data.birthdate.toISOString(),
-        email: signupEmail,
+        email,
         password: signupPassword,
       }).unwrap()
 
+      const verificationFlow = { email, message, resendAvailableAt: null }
+      saveVerificationFlow(verificationFlow)
+      dispatch(setVerificationFlow(verificationFlow))
       dispatch(resetAuthState())
       router.replace('/(auth)/check-email')
     } catch (error) {
