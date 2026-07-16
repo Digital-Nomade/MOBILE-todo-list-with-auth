@@ -33,7 +33,7 @@ describe('graphqlBaseQuery', () => {
     expect(result.data).toEqual({ me: { id: 'abc' } })
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toContain('/graphql')
+    expect(url).toBe('http://localhost:3773/graphql')
     expect(init.method).toBe('POST')
 
     const call = parseGraphQLCall(fetchMock.mock.calls[0])

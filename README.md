@@ -55,7 +55,7 @@ This project uses Maestro against standalone iOS/Android builds:
 
 ```bash
 # Build and install on the iOS Simulator
-EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3000/graphql npm run e2e:build:ios
+EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3773/graphql npm run e2e:build:ios
 
 # In another terminal, run backend-independent smoke flows
 npm run e2e
