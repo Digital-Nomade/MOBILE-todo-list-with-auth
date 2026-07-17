@@ -1,9 +1,10 @@
 import { TodoItem } from "@/components/features/Dashboard/TodoItem/TodoItem";
+import { TodoSyncStatusBanner } from "@/components/features/TodoSyncStatusBanner/TodoSyncStatusBanner";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { StylesGuide } from "@/constants/StyleGuide";
-import { useFetchTodosQuery, useUpdateTodoMutation } from "@/features/todos/todoApi";
+import { useOfflineTodoMutations, useOfflineTodos } from "@/features/todos/offline/hooks";
 import { useDebouncer } from "@/hooks/useDebouncer";
-import { Todo } from "@/types/todo-types";
+import { TodoViewModel } from "@/types/todo-types";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { useEffect, useState } from "react";
@@ -15,9 +16,9 @@ export default function DashboardScreen() {
   const [query, setQuery] = useState('')
   const debouncedValue = useDebouncer(query, 800)
   const [loading, setLoading] = useState(false)
-  const { data, isLoading, isFetching, refetch } = useFetchTodosQuery()
-  const [updateTodo] = useUpdateTodoMutation()
-  const [todos, setTodos] = useState<Todo[]>([])
+  const { data, isLoading, isFetching, refetch, syncState } = useOfflineTodos()
+  const { updateTodo } = useOfflineTodoMutations()
+  const [todos, setTodos] = useState<TodoViewModel[]>([])
 
   useEffect(() => {
     if (query && debouncedValue) {
@@ -30,25 +31,23 @@ export default function DashboardScreen() {
   }, [debouncedValue])
 
   useEffect(() => {
-    if (data?.data.length) {
-      setTodos(data.data)
-    }
+    setTodos(data ?? [])
   }, [data])
 
   async function handleCheckSubmit(todoId: string, isChecked: boolean) {
     try {
-      await updateTodo({ id: todoId, done: isChecked }).unwrap()
+      await updateTodo({ id: todoId, done: isChecked })
     } catch {
-      // list refetch (cache invalidation) restores the real state
+      // local state remains authoritative until sync completes
     }
   }
 
-  function onRefresh() {
+  async function onRefresh() {
     setRefreshing(true)
     try {
-      refetch()
-    } catch(error: any) {
-
+      await refetch()
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -76,6 +75,7 @@ export default function DashboardScreen() {
 
   return (
     <GlobalWrapper>
+      <TodoSyncStatusBanner syncState={syncState} />
       <View style={{ position: 'relative', }}>
         <TextInput
           style={{
@@ -95,6 +95,13 @@ export default function DashboardScreen() {
           {renderInputAction()}
         </View>
       </View>
+      {(isLoading || isFetching) && todos.length === 0 ? (
+        <ActivityIndicator
+          style={{ marginTop: 48 }}
+          color={StylesGuide.colors.dangerLight}
+          size="large"
+        />
+      ) : (
       <FlatList
         style={{ paddingTop: 48 }}
         data={todos}
@@ -114,6 +121,7 @@ export default function DashboardScreen() {
           />
         )}
       />
+      )}
     </GlobalWrapper>
   )
 }

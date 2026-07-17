@@ -11,6 +11,8 @@ export interface GraphQLRequest {
   variables?: Record<string, unknown>
   /** When true the Authorization header is never attached (login, refresh, etc.) */
   anonymous?: boolean
+  /** Stable key for idempotent create retries (backend must honor Idempotency-Key). */
+  idempotencyKey?: string
 }
 
 export type GraphQLBaseQueryFn = BaseQueryFn<GraphQLRequest, unknown, NormalizedGraphQLError>
@@ -36,6 +38,10 @@ function buildHeaders(args: GraphQLRequest, api: BaseQueryApi): Record<string, s
     if (token) {
       headers.authorization = `Bearer ${token}`
     }
+  }
+
+  if (args.idempotencyKey) {
+    headers['Idempotency-Key'] = args.idempotencyKey
   }
 
   return headers

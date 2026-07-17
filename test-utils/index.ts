@@ -1,5 +1,6 @@
 import { api } from '@/config/redux/api'
 import authReducer from '@/features/auth/authFlowSlice'
+import offlineTodosReducer from '@/features/todos/offline/offlineSlice'
 import { AuthPayload } from '@/features/auth/authTypes'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import * as SecureStore from 'expo-secure-store'
@@ -8,6 +9,7 @@ export function createTestStore() {
   return configureStore({
     reducer: combineReducers({
       auth: authReducer,
+      offlineTodos: offlineTodosReducer,
       [api.reducerPath]: api.reducer,
     }),
     middleware: (getDefaultMiddleware) =>

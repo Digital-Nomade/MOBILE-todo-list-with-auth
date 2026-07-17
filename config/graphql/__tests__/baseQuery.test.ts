@@ -88,4 +88,20 @@ describe('graphqlBaseQuery', () => {
 
     expect(result.error).toMatchObject({ code: 'NETWORK_ERROR' })
   })
+
+  it('forwards Idempotency-Key headers for queued create retries', async () => {
+    fetchMock.mockResolvedValueOnce(graphqlSuccess({ createTodo: { id: 'abc' } }))
+
+    await graphqlBaseQuery(
+      {
+        document: 'mutation CreateTodo { createTodo { id } }',
+        idempotencyKey: 'idem-123',
+      },
+      fakeApi('token-123'),
+      {}
+    )
+
+    const call = parseGraphQLCall(fetchMock.mock.calls[0])
+    expect(call.headers['Idempotency-Key']).toBe('idem-123')
+  })
 })

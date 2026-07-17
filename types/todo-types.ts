@@ -42,3 +42,93 @@ export interface TodoUpdatePayload {
   dueTo?: Date | string | null
   reminderOn?: Date | string | null
 }
+
+/** Sync lifecycle for a locally tracked todo record. */
+export type TodoSyncStatus = 'synced' | 'pending' | 'local_only' | 'failed'
+
+/** Durable local record keyed by stable localId; serverId is set after upload. */
+export interface LocalTodoRecord {
+  localId: string
+  serverId: string | null
+  title: string
+  description: string
+  done: boolean
+  dueTo?: string | null
+  reminderOn?: string | null
+  createdAt: string
+  updatedAt: string
+  syncStatus: TodoSyncStatus
+}
+
+export type QueuedOperationType = 'CREATE' | 'UPDATE' | 'DELETE'
+
+export interface QueuedOperationBase {
+  opId: string
+  localId: string
+  createdAt: string
+  retryCount: number
+  lastError?: string
+}
+
+export interface QueuedCreateOperation extends QueuedOperationBase {
+  type: 'CREATE'
+  idempotencyKey: string
+  payload: {
+    title: string
+    description: string
+    dueTo?: string | null
+    reminderOn?: string | null
+  }
+}
+
+export interface QueuedUpdateOperation extends QueuedOperationBase {
+  type: 'UPDATE'
+  serverId: string | null
+  payload: {
+    title?: string
+    description?: string
+    done?: boolean
+    dueTo?: string | null
+    reminderOn?: string | null
+  }
+}
+
+export interface QueuedDeleteOperation extends QueuedOperationBase {
+  type: 'DELETE'
+  serverId: string | null
+}
+
+export type QueuedOperation =
+  | QueuedCreateOperation
+  | QueuedUpdateOperation
+  | QueuedDeleteOperation
+
+/** Per-user offline store persisted in AsyncStorage. */
+export interface UserOfflineStore {
+  version: 1
+  userId: string
+  localOnly: boolean
+  baselineSnapshot: LocalTodoRecord[] | null
+  todos: LocalTodoRecord[]
+  queue: QueuedOperation[]
+  lastSyncAt: string | null
+}
+
+export type SyncCoordinatorStatus = 'idle' | 'syncing' | 'failed'
+
+export interface TodoSyncState {
+  isOnline: boolean
+  localOnly: boolean
+  pendingCount: number
+  coordinatorStatus: SyncCoordinatorStatus
+  lastSyncAt: string | null
+  lastError: string | null
+}
+
+/** View-model todo exposed to UI (uses localId as primary id). */
+export interface TodoViewModel extends Omit<Todo, 'id'> {
+  id: string
+  localId: string
+  serverId: string | null
+  syncStatus: TodoSyncStatus
+}

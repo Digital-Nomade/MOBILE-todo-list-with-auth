@@ -1,7 +1,8 @@
 import { CheckBox } from "@/components/atoms";
+import { TodoSyncStatusBanner } from "@/components/features/TodoSyncStatusBanner/TodoSyncStatusBanner";
 import { StylesGuide } from "@/constants/StyleGuide";
-import { useFetchTodosQuery, useUpdateTodoMutation } from "@/features/todos/todoApi";
-import { Todo } from "@/types/todo-types";
+import { useOfflineTodoMutations, useOfflineTodos } from "@/features/todos/offline/hooks";
+import { TodoViewModel } from "@/types/todo-types";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { AnimatePresence, MotiView } from 'moti';
@@ -13,19 +14,16 @@ import { styles } from './TodoNavigator.styles';
 type Directions = 'next' | 'previous'
 
 export function TodoNavigator() {
-  const { data: todosData, isLoading, isFetching } = useFetchTodosQuery()
-  const [updateTodo] = useUpdateTodoMutation()
-  const [checked, setChecked] = useState(false)
+  const { data, isLoading, isFetching, syncState } = useOfflineTodos()
+  const { updateTodo } = useOfflineTodoMutations()
   const [loading, setLoading] = useState(isLoading || isFetching)
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [todos, setTodos] = useState<TodoViewModel[]>([])
   const [todoIndex, setTodoIndex] = useState(0)
   const [animate, setAnimate] = useState(false)
 
   useEffect(() => {
-    if (todosData?.data.length) {
-      setTodos(todosData.data)
-    }
-  }, [todosData])
+    setTodos(data ?? [])
+  }, [data])
 
   useEffect(() => {
     setLoading(isLoading || isFetching)
@@ -67,18 +65,19 @@ export function TodoNavigator() {
     }, 200)
   }
 
-  async function handleCheckTodo(todo: Todo, isChecked: boolean) {
+  async function handleCheckTodo(todo: TodoViewModel, isChecked: boolean) {
     try {
-      await updateTodo({ id: todo.id, done: isChecked }).unwrap()
+      await updateTodo({ id: todo.id, done: isChecked })
     } catch {
-      // list refetch (cache invalidation) restores the real state
+      // local store remains authoritative until sync completes
     }
   }
 
-  const currentTodo: Todo | undefined = todos[todoIndex]
+  const currentTodo: TodoViewModel | undefined = todos[todoIndex]
 
   return (
     <Fragment>
+      <TodoSyncStatusBanner syncState={syncState} />
       {loading
         ? <ActivityIndicator
             style={styles.activityIndicator}

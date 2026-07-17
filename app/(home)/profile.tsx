@@ -1,13 +1,19 @@
-import { Button, DatePicker, Input } from "@/components/atoms";
+import { Button, DatePicker, Input, Switch } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { getUserFacingMessage } from "@/config/graphql/errors";
+import { useAppDispatch } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
 import { useLogoutAllMutation, useLogoutMutation } from "@/features/auth/authApi";
+import { useTodoSyncState } from "@/features/todos/offline/hooks";
+import {
+  disableLocalOnlyMode,
+  enableLocalOnlyMode,
+} from "@/features/todos/offline/todoService";
 import { useMeQuery, useUpdateProfileMutation } from "@/features/user/userApi";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 
 interface ProfileInputs {
   name: string
@@ -18,11 +24,14 @@ interface ProfileInputs {
 
 export default function Profile() {
   const router = useRouter()
+  const dispatch = useAppDispatch()
+  const syncState = useTodoSyncState()
   const { data: profile, isLoading: isLoadingProfile, error: profileError } = useMeQuery()
   const [updateProfile, { isLoading: isSaving }] = useUpdateProfileMutation()
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
   const [logoutAll, { isLoading: isLoggingOutAll }] = useLogoutAllMutation()
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [localOnlyLoading, setLocalOnlyLoading] = useState(false)
 
   const {
     register,
@@ -71,6 +80,52 @@ export default function Profile() {
 
   async function onLogoutAll() {
     await logoutAll().catch(() => {})
+  }
+
+  async function onToggleLocalOnly(nextValue: boolean) {
+    if (!profile?.id) {
+      return
+    }
+
+    setFeedback(null)
+
+    if (nextValue) {
+      setLocalOnlyLoading(true)
+      try {
+        await enableLocalOnlyMode(dispatch, profile.id)
+        setFeedback('Local-only mode enabled. Todos will stay on this device.')
+      } catch (error) {
+        setFeedback(getUserFacingMessage(error, {
+          UNKNOWN: error instanceof Error ? error.message : 'Could not enable local-only mode.',
+        }))
+      } finally {
+        setLocalOnlyLoading(false)
+      }
+      return
+    }
+
+    Alert.alert(
+      'Upload local todos?',
+      'Disabling local-only mode will compare your local todos with the last server snapshot and upload changes in the background. Existing server todos are not deleted.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Upload changes',
+          style: 'default',
+          onPress: async () => {
+            setLocalOnlyLoading(true)
+            try {
+              await disableLocalOnlyMode(dispatch, profile.id, true)
+              setFeedback('Local-only mode disabled. Upload started in the background.')
+            } catch (error) {
+              setFeedback(getUserFacingMessage(error))
+            } finally {
+              setLocalOnlyLoading(false)
+            }
+          },
+        },
+      ]
+    )
   }
 
   const { colors, fontSizes } = StylesGuide
@@ -183,6 +238,45 @@ export default function Profile() {
             onChange={(date) => setValue('birthdate', date, { shouldDirty: true })}
             value={watch('birthdate')}
             mode="date"
+          />
+        </View>
+        <View
+          testID="profile-local-only-row"
+          style={{
+            marginBottom: 32,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: colors.dangerLight,
+                fontSize: fontSizes.lg,
+                marginBottom: 8,
+              }}
+            >
+              Keep todos local only
+            </Text>
+            <Text
+              style={{
+                color: colors.dangerLight,
+                fontSize: fontSizes.sm,
+                fontWeight: '200',
+              }}
+            >
+              When enabled, todos are stored on this device and are not sent to the server.
+              Existing server todos remain unchanged.
+            </Text>
+          </View>
+          <Switch
+            testID="profile-local-only-switch"
+            value={syncState.localOnly}
+            disabled={localOnlyLoading}
+            onValueChange={onToggleLocalOnly}
+            accessibilityLabel="Keep todos local only"
           />
         </View>
         {!!feedback && (

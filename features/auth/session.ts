@@ -1,8 +1,9 @@
 import { setCredentials, signOut } from './authFlowSlice'
+import { api } from '@/config/redux/api'
 import { AuthPayload } from './authTypes'
 import { clearRefreshToken, saveRefreshToken } from './tokenStorage'
 
-type Dispatch = (action: { type: string; payload?: unknown }) => unknown
+type Dispatch = (action: unknown) => unknown
 
 /**
  * Persists both rotated tokens atomically: the refresh token is written to
@@ -23,6 +24,7 @@ export async function clearSession(dispatch: Dispatch): Promise<void> {
   try {
     await clearRefreshToken()
   } finally {
+    dispatch(api.util.resetApiState())
     dispatch(signOut())
   }
 }

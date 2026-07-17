@@ -14,6 +14,10 @@ import {
   UPDATE_TODO_MUTATION,
 } from "./documents";
 
+export type CreateTodoArgs = TodoCreationPayload & {
+  idempotencyKey?: string
+}
+
 const DEFAULT_PAGINATION: TodoPaginationInput = {
   currentPage: 1,
   limit: 10,
@@ -50,7 +54,7 @@ export const todoApi = api.injectEndpoints({
       transformResponse: (data: { todo: Todo }) => data.todo,
       providesTags: ['todos'],
     }),
-    createTodo: build.mutation<Todo, TodoCreationPayload>({
+    createTodo: build.mutation<Todo, CreateTodoArgs>({
       query: (todo) => ({
         document: CREATE_TODO_MUTATION,
         variables: {
@@ -61,6 +65,7 @@ export const todoApi = api.injectEndpoints({
             reminderOn: toISOString(todo.reminderOn),
           },
         },
+        idempotencyKey: todo.idempotencyKey,
       }),
       transformResponse: (data: { createTodo: Todo }) => data.createTodo,
       invalidatesTags: ['todos'],

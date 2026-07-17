@@ -3,25 +3,30 @@ import { SkeletonTodoForm } from "@/components/atoms/skeleton-todo-form/Skeleton
 import { TodoDetails } from "@/components/organisms/TodoModal/TodoDetails";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { StylesGuide } from "@/constants/StyleGuide";
-import { useDeleteTodoMutation, useFetchTodoQuery } from "@/features/todos/todoApi";
+import { useOfflineTodo, useOfflineTodoMutations } from "@/features/todos/offline/hooks";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import { Text, View } from "react-native";
 
 export default function Details() {
   const router = useRouter()
   const params = useLocalSearchParams<{'todo-id': string}>()
   const todoId = params['todo-id']
-  const { data: todo, isLoading, error } = useFetchTodoQuery(todoId ?? '', { skip: !todoId })
-  const [deleteTodo, { isLoading: isDeleting }] = useDeleteTodoMutation()
+  const { data: todo, isLoading, error } = useOfflineTodo(todoId ?? '', { skip: !todoId })
+  const { deleteTodo } = useOfflineTodoMutations()
+  const [isDeleting, setIsDeleting] = useState(false)
 
   async function onDelete() {
     if (!todoId) return
 
+    setIsDeleting(true)
     try {
-      await deleteTodo(todoId).unwrap()
+      await deleteTodo(todoId)
       router.back()
     } catch {
-      // the todo list stays consistent through cache invalidation
+      // list remains consistent through local store updates
+    } finally {
+      setIsDeleting(false)
     }
   }
 

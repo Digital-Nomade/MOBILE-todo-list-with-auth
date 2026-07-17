@@ -25,6 +25,30 @@ const profile = {
   updatedAt: '2026-07-15T00:00:00.000Z',
 }
 
+const mockEnableLocalOnlyMode = jest.fn()
+const mockDisableLocalOnlyMode = jest.fn()
+const mockDispatch = jest.fn()
+
+jest.mock('@/config/redux/hooks', () => ({
+  useAppDispatch: () => mockDispatch,
+}))
+
+jest.mock('@/features/todos/offline/hooks', () => ({
+  useTodoSyncState: () => ({
+    isOnline: true,
+    localOnly: false,
+    pendingCount: 0,
+    coordinatorStatus: 'idle',
+    lastSyncAt: null,
+    lastError: null,
+  }),
+}))
+
+jest.mock('@/features/todos/offline/todoService', () => ({
+  enableLocalOnlyMode: (...args: unknown[]) => mockEnableLocalOnlyMode(...args),
+  disableLocalOnlyMode: (...args: unknown[]) => mockDisableLocalOnlyMode(...args),
+}))
+
 jest.mock('@/features/user/userApi', () => ({
   useMeQuery: () => mockMeResult,
   useUpdateProfileMutation: () => [
@@ -68,6 +92,8 @@ describe('ProfileScreen', () => {
     })
     mockLogout.mockResolvedValue({ data: { message: 'Logged out.' } })
     mockLogoutAll.mockResolvedValue({ data: { message: 'Logged out.' } })
+    mockEnableLocalOnlyMode.mockResolvedValue({ localOnly: true })
+    mockDisableLocalOnlyMode.mockResolvedValue({ localOnly: false })
   })
 
   it('renders identity fields as read-only text and editable profile fields', async () => {
@@ -127,6 +153,25 @@ describe('ProfileScreen', () => {
 
     fireEvent.press(screen.getByText('Logout from all devices'))
     await waitFor(() => expect(mockLogoutAll).toHaveBeenCalledTimes(1))
+  })
+
+  it('renders the local-only toggle defaulting to off', async () => {
+    render(<ProfileScreen />)
+    await screen.findByDisplayValue('Ada')
+
+    expect(screen.getByTestId('profile-local-only-switch')).toBeTruthy()
+    expect(screen.getByText('Keep todos local only')).toBeTruthy()
+  })
+
+  it('enables local-only mode immediately when toggled on', async () => {
+    render(<ProfileScreen />)
+    await screen.findByDisplayValue('Ada')
+
+    fireEvent(screen.getByTestId('profile-local-only-switch'), 'valueChange', true)
+
+    await waitFor(() => {
+      expect(mockEnableLocalOnlyMode).toHaveBeenCalledWith(mockDispatch, profile.id)
+    })
   })
 
   it('renders a safe error state when the profile cannot be loaded', () => {

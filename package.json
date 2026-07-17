@@ -20,6 +20,7 @@
     "e2e": "maestro test --config=.maestro/config.yaml --include-tags=smoke .maestro",
     "e2e:backend": "maestro test --config=.maestro/config.yaml --include-tags=requires-backend .maestro",
     "e2e:all": "maestro test --config=.maestro/config.yaml .maestro",
+    "e2e:offline": "maestro test --config=.maestro/config.yaml --include-tags=offline .maestro",
     "e2e:studio": "maestro studio",
     "e2e:build:ios": "expo run:ios",
     "e2e:build:android": "expo run:android"
@@ -70,7 +71,8 @@
     "react-native-svg": "^15.7.1",
     "react-native-web": "^0.19.13",
     "react-redux": "^9.1.2",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "@react-native-community/netinfo": "11.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

@@ -1,7 +1,7 @@
 import { Button, DatePicker, Input } from "@/components/atoms"
 import { StylesGuide } from "@/constants/StyleGuide"
-import { useCreateTodoMutation, useUpdateTodoMutation } from "@/features/todos/todoApi"
-import { Todo, TodoCreationPayload } from "@/types/todo-types"
+import { useOfflineTodoMutations } from "@/features/todos/offline/hooks"
+import { TodoCreationPayload, TodoViewModel } from "@/types/todo-types"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form"
 import { Text, View } from "react-native"
 
 interface Props {
-  todo?: Todo
+  todo?: TodoViewModel
   showCancel?: boolean
   isEditing?: boolean
 }
@@ -20,7 +20,6 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
     handleSubmit,
     watch,
     setValue,
-    reset,
     formState: {
       errors,
       isDirty,
@@ -30,8 +29,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
   const router = useRouter()
   const [descriptionLength, setLength] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [createTodo, { isLoading }] = useCreateTodoMutation()
-  const [updateTodo] = useUpdateTodoMutation()
+  const { createTodo, updateTodo } = useOfflineTodoMutations()
   
   useEffect(() => {
     if (todo) {
@@ -40,30 +38,21 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
       setValue('dueTo', todo.dueTo ? new Date(todo.dueTo) : undefined)
       setValue('reminderOn', todo.reminderOn ? new Date(todo.reminderOn) : undefined)
     }
-  }, [todo])
+  }, [todo, setValue])
 
   async function onSubmit(data: TodoCreationPayload) {
-    if (isEditing && todo) {
-      await onUpdateTodo(todo.id, data)
-    } else {
-      await onCreateTodo(data)
-    }
-    router.dismiss()
-  }
-
-  async function onCreateTodo(data: TodoCreationPayload) {
+    setLoading(true)
     try {
-      await createTodo(data).unwrap()
+      if (isEditing && todo) {
+        await updateTodo({ id: todo.id, ...data })
+      } else {
+        await createTodo(data)
+      }
+      router.dismiss()
     } catch {
-      // the list is refetched via cache invalidation only on success
-    }
-  }
-
-  async function onUpdateTodo(id: string, data: TodoCreationPayload) {
-    try {
-      await updateTodo({ id, ...data }).unwrap()
-    } catch {
-      // the list is refetched via cache invalidation only on success
+      // keep the form open so the user can retry
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -74,7 +63,6 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
         style={{ marginBottom: 48, fontWeight: 300, }}
         placeholder="New to do"
         onChangeText={(text) => {
-          console.log(text)
           setValue('title', text, { shouldDirty: true })
         }}
         placeholderTextColor={StylesGuide.colors.white}

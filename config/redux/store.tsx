@@ -1,4 +1,5 @@
 import authReducer from '@/features/auth/authFlowSlice'
+import offlineTodosReducer from '@/features/todos/offline/offlineSlice'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import {
@@ -15,13 +16,13 @@ import { api } from './api'
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  // Tokens live in memory only (refresh token goes to SecureStore) and the
-  // server cache must never be written to AsyncStorage.
-  blacklist: ['auth', api.reducerPath],
+  // Tokens, RTK cache, and offline reactive state must never be written to AsyncStorage.
+  blacklist: ['auth', api.reducerPath, 'offlineTodos'],
 }
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  offlineTodos: offlineTodosReducer,
   [api.reducerPath]: api.reducer
 })
 

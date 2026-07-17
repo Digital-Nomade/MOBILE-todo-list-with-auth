@@ -35,6 +35,11 @@ export const CreateWithoutCancel: Story = {
 export const Edit: Story = {
   args: {
     isEditing: true,
-    todo: todosFixture[0],
+    todo: {
+      ...todosFixture[0],
+      localId: todosFixture[0].id,
+      serverId: todosFixture[0].id,
+      syncStatus: 'synced',
+    },
   },
 };

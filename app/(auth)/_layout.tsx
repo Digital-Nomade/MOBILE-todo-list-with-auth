@@ -9,6 +9,10 @@ export default function AuthLayout() {
 
   if (isAuthenticated && user?.status === 'ACTIVE') return <Redirect href="/(home)" />
 
+  if (isAuthenticated && user?.status === 'PENDING_VERIFICATION') {
+    return <Redirect href="/(auth)/check-email" />
+  }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen

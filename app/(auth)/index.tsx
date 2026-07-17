@@ -5,6 +5,10 @@ import { getErrorCode, getUserFacingMessage } from "@/config/graphql/errors";
 import { StylesGuide } from "@/constants/StyleGuide";
 import { useLoginMutation } from "@/features/auth/authApi";
 import { persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
+import {
+  beginEmailVerificationFlow,
+  emailFromLoginIdentifier,
+} from "@/features/auth/verificationNavigation";
 import { Link, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -44,12 +48,31 @@ export default function Index() {
       }).unwrap()
 
       if (payload.user.status === 'PENDING_VERIFICATION') {
-        router.replace('/(auth)/check-email')
+        beginEmailVerificationFlow({
+          dispatch,
+          router,
+          email: payload.user.email,
+        })
+        return
       }
       // ACTIVE users are redirected by the (auth) layout guard.
       // SUSPENDED users normally fail with FORBIDDEN and land in the catch.
     } catch (error) {
       const code = getErrorCode(error)
+
+      if (code === 'FORBIDDEN') {
+        const email = emailFromLoginIdentifier(data.identifier)
+
+        if (email) {
+          beginEmailVerificationFlow({
+            dispatch,
+            router,
+            email,
+            message: 'Confirm your email to sign in.',
+          })
+          return
+        }
+      }
 
       setServerError(getUserFacingMessage(error, {
         UNAUTHENTICATED: 'Invalid credentials. Please try again.',

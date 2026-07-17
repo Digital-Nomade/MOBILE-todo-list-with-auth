@@ -20,3 +20,5 @@ storybook-static/
 
 expo-env.d.ts
 # @end expo-cli
+
+docs

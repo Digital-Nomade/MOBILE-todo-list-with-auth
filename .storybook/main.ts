@@ -36,6 +36,10 @@ const config: StorybookConfig = {
             fileURLToPath(new URL('.', import.meta.url)),
             'mocks/todo-api.ts',
           ),
+          '@/features/todos/offline/hooks': resolve(
+            fileURLToPath(new URL('.', import.meta.url)),
+            'mocks/offline-todo-hooks.ts',
+          ),
           '@': resolve(fileURLToPath(new URL('.', import.meta.url)), '..'),
         },
       },

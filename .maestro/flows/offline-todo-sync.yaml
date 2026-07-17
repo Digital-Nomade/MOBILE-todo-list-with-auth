@@ -1,0 +1,28 @@
+appId: com.digitalnomade.todo
+name: Offline todo sync
+tags:
+  - offline
+  - requires-backend
+  - todos
+---
+# Requires airplane-mode toggling support in the target simulator/device.
+- launchApp
+- runFlow:
+    file: authenticated-todo.yaml
+    env:
+      TODO_TITLE: "Offline queued todo"
+- setAirplaneMode: enabled
+- tapOn:
+    id: home-tab
+- tapOn:
+    id: add-todo-button
+- tapOn:
+    id: todo-title-input
+- inputText: "Offline queued todo"
+- tapOn:
+    id: todo-save-button
+- assertVisible:
+    id: todo-sync-status-banner
+- setAirplaneMode: disabled
+- assertVisible:
+    text: "Offline queued todo"

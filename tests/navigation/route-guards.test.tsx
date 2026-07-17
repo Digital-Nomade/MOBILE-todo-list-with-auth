@@ -86,6 +86,21 @@ describe('route guards', () => {
     expect(screen.getByText('redirect:/(home)')).toBeTruthy()
   })
 
+  it('redirects pending authenticated users to email confirmation', () => {
+    mockSession = {
+      isInitializing: false,
+      isAuthenticated: true,
+      user: {
+        id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
+        status: 'PENDING_VERIFICATION',
+      },
+    }
+
+    render(<AuthLayout />)
+
+    expect(screen.getByText('redirect:/(auth)/check-email')).toBeTruthy()
+  })
+
   it('sends pending users to verification guidance', () => {
     mockSession = {
       isInitializing: false,

@@ -79,13 +79,48 @@ describe('LoginScreen', () => {
 
     render(<LoginScreen />)
 
-    fireEvent.changeText(screen.getByPlaceholderText('email or username'), 'pending-user')
+    fireEvent.changeText(screen.getByPlaceholderText('email or username'), 'pending-user@example.com')
     fireEvent.changeText(screen.getByPlaceholderText('password'), 'secret-password')
     fireEvent.press(screen.getByText('login'))
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith('/(auth)/check-email')
     })
+  })
+
+  it('routes forbidden email logins to email confirmation', async () => {
+    mockLogin.mockReturnValue({
+      unwrap: jest.fn().mockRejectedValue({ code: 'FORBIDDEN', message: 'Forbidden' }),
+    })
+
+    render(<LoginScreen />)
+
+    fireEvent.changeText(screen.getByPlaceholderText('email or username'), 'pending-user@example.com')
+    fireEvent.changeText(screen.getByPlaceholderText('password'), 'secret-password')
+    fireEvent.press(screen.getByText('login'))
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/check-email')
+    })
+
+    expect(screen.queryByText('This account is not available. Verify your email or contact support.')).toBeNull()
+  })
+
+  it('shows forbidden feedback when the identifier is not an email', async () => {
+    mockLogin.mockReturnValue({
+      unwrap: jest.fn().mockRejectedValue({ code: 'FORBIDDEN', message: 'Forbidden' }),
+    })
+
+    render(<LoginScreen />)
+
+    fireEvent.changeText(screen.getByPlaceholderText('email or username'), 'pending-user')
+    fireEvent.changeText(screen.getByPlaceholderText('password'), 'secret-password')
+    fireEvent.press(screen.getByText('login'))
+
+    expect(
+      await screen.findByText('This account is not available. Verify your email or contact support.')
+    ).toBeTruthy()
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 
   it('shows a safe invalid-credentials message', async () => {
