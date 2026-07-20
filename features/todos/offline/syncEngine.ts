@@ -49,7 +49,7 @@ async function executeCreate(
   op: Extract<QueuedOperation, { type: 'CREATE' }>
 ): Promise<{ store: UserOfflineStore; stop: boolean }> {
   try {
-    const created = await dispatch(
+    let created = await dispatch(
       todoApi.endpoints.createTodo.initiate({
         title: op.payload.title,
         description: op.payload.description,
@@ -58,6 +58,15 @@ async function executeCreate(
         idempotencyKey: op.idempotencyKey,
       })
     ).unwrap()
+
+    if (op.payload.done && !created.done) {
+      created = await dispatch(
+        todoApi.endpoints.updateTodo.initiate({
+          id: created.id,
+          done: true,
+        }),
+      ).unwrap()
+    }
 
     const syncedRecord = serverTodoToLocalRecord(created, 'synced')
     syncedRecord.localId = op.localId
@@ -309,7 +318,13 @@ export function buildLocalRecordFromCreate(
 
 export function buildQueuedCreate(
   localId: string,
-  payload: { title: string; description: string; dueTo?: string | null; reminderOn?: string | null }
+  payload: {
+    title: string
+    description: string
+    done?: boolean
+    dueTo?: string | null
+    reminderOn?: string | null
+  }
 ): Extract<QueuedOperation, { type: 'CREATE' }> {
   return {
     opId: Crypto.randomUUID(),
@@ -367,6 +382,7 @@ export function deriveQueueFromBaseline(
       queue.push(buildQueuedCreate(record.localId, {
         title: record.title,
         description: record.description,
+        done: record.done,
         dueTo: record.dueTo,
         reminderOn: record.reminderOn,
       }))

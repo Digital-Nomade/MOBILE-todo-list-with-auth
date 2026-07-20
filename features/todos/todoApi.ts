@@ -1,14 +1,19 @@
 import { api } from "@/config/redux/api";
 import {
+  CommittedTodoLocalOnlyMigration,
   PaginatedTodos,
+  PreparedTodoLocalOnlyMigration,
   Todo,
   TodoCreationPayload,
   TodoPaginationInput,
   TodoUpdatePayload,
 } from "@/types/todo-types";
 import {
+  CANCEL_LOCAL_ONLY_MUTATION,
+  COMMIT_LOCAL_ONLY_MUTATION,
   CREATE_TODO_MUTATION,
   DELETE_TODO_MUTATION,
+  PREPARE_LOCAL_ONLY_MUTATION,
   SEARCH_TODOS_QUERY,
   TODO_QUERY,
   TODOS_QUERY,
@@ -109,6 +114,31 @@ export const todoApi = api.injectEndpoints({
       transformResponse: (data: { deleteTodo: boolean }) => data.deleteTodo,
       invalidatesTags: ['todos'],
     }),
+    prepareLocalOnlyMigration: build.mutation<PreparedTodoLocalOnlyMigration, void>({
+      query: () => ({ document: PREPARE_LOCAL_ONLY_MUTATION }),
+      transformResponse: (data: {
+        prepareTodoLocalOnlyMigration: PreparedTodoLocalOnlyMigration
+      }) => data.prepareTodoLocalOnlyMigration,
+    }),
+    commitLocalOnlyMigration: build.mutation<CommittedTodoLocalOnlyMigration, string>({
+      query: (migrationId) => ({
+        document: COMMIT_LOCAL_ONLY_MUTATION,
+        variables: { migrationId },
+      }),
+      transformResponse: (data: {
+        commitTodoLocalOnlyMigration: CommittedTodoLocalOnlyMigration
+      }) => data.commitTodoLocalOnlyMigration,
+      invalidatesTags: ['todos'],
+    }),
+    cancelLocalOnlyMigration: build.mutation<{ message: string }, string>({
+      query: (migrationId) => ({
+        document: CANCEL_LOCAL_ONLY_MUTATION,
+        variables: { migrationId },
+      }),
+      transformResponse: (data: {
+        cancelTodoLocalOnlyMigration: { message: string }
+      }) => data.cancelTodoLocalOnlyMigration,
+    }),
   })
 })
 
@@ -119,4 +149,7 @@ export const {
   useCreateTodoMutation,
   useUpdateTodoMutation,
   useDeleteTodoMutation,
+  usePrepareLocalOnlyMigrationMutation,
+  useCommitLocalOnlyMigrationMutation,
+  useCancelLocalOnlyMigrationMutation,
 } = todoApi

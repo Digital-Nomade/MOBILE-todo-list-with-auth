@@ -66,3 +66,48 @@ export const DELETE_TODO_MUTATION = `
     deleteTodo(id: $id)
   }
 `
+
+export const PREPARE_LOCAL_ONLY_MUTATION = `
+  mutation PrepareLocalOnly {
+    prepareTodoLocalOnlyMigration {
+      migrationId
+      expiresAt
+      todoCount
+      checksum
+      todos {
+        ${TODO_FIELDS}
+      }
+    }
+  }
+`
+
+export const COMMIT_LOCAL_ONLY_MUTATION = `
+  mutation CommitLocalOnly($migrationId: ID!) {
+    commitTodoLocalOnlyMigration(migrationId: $migrationId) {
+      migrationId
+      deletedCount
+      committedAt
+    }
+  }
+`
+
+export const CANCEL_LOCAL_ONLY_MUTATION = `
+  mutation CancelLocalOnly($migrationId: ID!) {
+    cancelTodoLocalOnlyMigration(migrationId: $migrationId) {
+      message
+    }
+  }
+`
+
+export const TODO_CHANGED_SUBSCRIPTION = `
+  subscription TodoChanged {
+    todoChanged {
+      type
+      todoId
+      occurredAt
+      todo {
+        ${TODO_FIELDS}
+      }
+    }
+  }
+`

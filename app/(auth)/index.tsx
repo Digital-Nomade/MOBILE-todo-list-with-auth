@@ -142,7 +142,10 @@ export default function Index() {
             errorMessage={errors['password']?.message}
             {...register('password', {
               required: 'You must provide a password',
-              minLength: 6,
+              minLength: {
+                value: 8,
+                message: 'Your password must have at least 8 characters',
+              },
             })}
           />
           <View>

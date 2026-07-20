@@ -5,10 +5,12 @@ import {
   authPayloadFixture,
   clearStoredTokens,
   createTestStore,
+  graphqlError,
   graphqlSuccess,
   mockFetch,
   parseGraphQLCall,
   seedRefreshToken,
+  teardownStore,
 } from '@/test-utils'
 import { setCredentials } from '@/features/auth/authFlowSlice'
 import { renderHook, waitFor } from '@testing-library/react-native'
@@ -100,14 +102,25 @@ describe('searchServerTodos', () => {
     expect(parseGraphQLCall(fetchMock.mock.calls[0]).variables.term).toBe('groceries')
     expect(results).toHaveLength(1)
     expect(results[0]?.title).toBe('Buy groceries')
+
+    await teardownStore(store)
   })
 })
 
 describe('useTodoSearch', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
   it('searches local todos when local-only mode is enabled', async () => {
     const store = createSearchStore(true)
 
-    const { result } = renderHook(() => useTodoSearch('buy'), {
+    const { result, unmount } = renderHook(() => useTodoSearch('buy'), {
       wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
     })
 
@@ -116,6 +129,9 @@ describe('useTodoSearch', () => {
       expect(result.current.results).toHaveLength(1)
       expect(result.current.results[0]?.title).toBe('Buy groceries')
     })
+
+    unmount()
+    store.dispatch(api.util.resetApiState())
   })
 
   it('includes done todos in local search results', () => {
@@ -128,5 +144,42 @@ describe('useTodoSearch', () => {
     const results = filterTodosByQuery(todos, 'done')
     expect(results).toHaveLength(1)
     expect(results[0]?.done).toBe(true)
+  })
+
+  it('falls back to local results when server search loses connectivity', async () => {
+    const store = createSearchStore(false)
+    mockFetch().mockRejectedValueOnce(new Error('offline'))
+
+    const { result, unmount } = renderHook(() => useTodoSearch('buy'), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLocalSearch).toBe(true)
+      expect(result.current.results).toHaveLength(1)
+      expect(result.current.searchError).toBeNull()
+    })
+
+    unmount()
+    store.dispatch(api.util.resetApiState())
+  })
+
+  it('surfaces semantic search failures instead of showing no matches', async () => {
+    const store = createSearchStore(false)
+    mockFetch().mockResolvedValueOnce(graphqlError('FORBIDDEN'))
+
+    const { result, unmount } = renderHook(() => useTodoSearch('buy'), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    })
+
+    await waitFor(() => {
+      expect(result.current.results).toEqual([])
+      expect(result.current.searchError).toBe(
+        'You are not allowed to perform this action.',
+      )
+    })
+
+    unmount()
+    store.dispatch(api.util.resetApiState())
   })
 })

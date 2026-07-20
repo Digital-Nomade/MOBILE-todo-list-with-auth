@@ -1,5 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@/config/redux/hooks'
 import { filterTodosByQuery } from '@/components/features/Dashboard/TodoSearchModal/filterTodosByQuery'
+import { getErrorCode, getUserFacingMessage } from '@/config/graphql/errors'
 import { useSession } from '@/hooks/useSession'
 import {
   TodoCreationPayload,
@@ -141,6 +142,8 @@ export function useTodoSearch(term: string) {
   const { localOnly, isOnline } = useAppSelector(selectTodoSyncState)
   const [results, setResults] = useState<TodoViewModel[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [usedLocalFallback, setUsedLocalFallback] = useState(false)
 
   const normalizedTerm = term.trim()
   const isLocalSearch = localOnly || !canUseBackend || !isOnline
@@ -149,17 +152,23 @@ export function useTodoSearch(term: string) {
     if (!normalizedTerm) {
       setResults([])
       setIsSearching(false)
+      setSearchError(null)
+      setUsedLocalFallback(false)
       return
     }
 
     if (isLocalSearch) {
       setResults(filterTodosByQuery(localTodos, normalizedTerm))
       setIsSearching(false)
+      setSearchError(null)
+      setUsedLocalFallback(false)
       return
     }
 
     let cancelled = false
     setIsSearching(true)
+    setSearchError(null)
+    setUsedLocalFallback(false)
 
     searchServerTodos(dispatch, normalizedTerm)
       .then(found => {
@@ -167,9 +176,15 @@ export function useTodoSearch(term: string) {
           setResults(found)
         }
       })
-      .catch(() => {
+      .catch(error => {
         if (!cancelled) {
-          setResults([])
+          if (getErrorCode(error) === 'NETWORK_ERROR') {
+            setResults(filterTodosByQuery(localTodos, normalizedTerm))
+            setUsedLocalFallback(true)
+          } else {
+            setResults([])
+            setSearchError(getUserFacingMessage(error))
+          }
         }
       })
       .finally(() => {
@@ -183,5 +198,10 @@ export function useTodoSearch(term: string) {
     }
   }, [dispatch, isLocalSearch, localTodos, normalizedTerm])
 
-  return { results, isSearching, isLocalSearch }
+  return {
+    results,
+    isSearching,
+    isLocalSearch: isLocalSearch || usedLocalFallback,
+    searchError,
+  }
 }

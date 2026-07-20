@@ -27,6 +27,26 @@ export interface PaginatedTodos {
   total?: number | null
 }
 
+export interface PreparedTodoLocalOnlyMigration {
+  migrationId: string
+  expiresAt: string
+  todoCount: number
+  checksum: string
+  todos: Todo[]
+}
+
+export interface CommittedTodoLocalOnlyMigration {
+  migrationId: string
+  deletedCount: number
+  committedAt: string
+}
+
+export interface LocalOnlyMigrationState {
+  migrationId: string
+  expiresAt: string
+  checksum: string
+}
+
 export interface TodoCreationPayload {
   title: string
   description: string
@@ -76,6 +96,7 @@ export interface QueuedCreateOperation extends QueuedOperationBase {
   payload: {
     title: string
     description: string
+    done?: boolean
     dueTo?: string | null
     reminderOn?: string | null
   }
@@ -108,6 +129,8 @@ export interface UserOfflineStore {
   version: 1
   userId: string
   localOnly: boolean
+  /** Present after the local snapshot is durable but before server deletion is confirmed. */
+  localOnlyMigration: LocalOnlyMigrationState | null
   baselineSnapshot: LocalTodoRecord[] | null
   todos: LocalTodoRecord[]
   queue: QueuedOperation[]

@@ -168,4 +168,36 @@ describe('todoApi', () => {
     expect(call.variables.id).toBe(TODO_ID)
     expect(result).toBe(true)
   })
+
+  it('uses the prepare, commit, and cancel local-only migration contract', async () => {
+    fetchMock
+      .mockResolvedValueOnce(graphqlSuccess({
+        prepareTodoLocalOnlyMigration: {
+          migrationId: 'migration-1',
+          expiresAt: '2026-07-20T21:00:00.000Z',
+          todoCount: 1,
+          checksum: 'checksum',
+          todos: [todoFixture],
+        },
+      }))
+      .mockResolvedValueOnce(graphqlSuccess({
+        commitTodoLocalOnlyMigration: {
+          migrationId: 'migration-1',
+          deletedCount: 1,
+          committedAt: '2026-07-20T20:50:00.000Z',
+        },
+      }))
+      .mockResolvedValueOnce(graphqlSuccess({
+        cancelTodoLocalOnlyMigration: { message: 'Cancelled.' },
+      }))
+
+    await store.dispatch(todoApi.endpoints.prepareLocalOnlyMigration.initiate()).unwrap()
+    await store.dispatch(todoApi.endpoints.commitLocalOnlyMigration.initiate('migration-1')).unwrap()
+    await store.dispatch(todoApi.endpoints.cancelLocalOnlyMigration.initiate('migration-1')).unwrap()
+
+    const calls = fetchMock.mock.calls.map(call => parseGraphQLCall(call))
+    expect(calls[0].query).toContain('mutation PrepareLocalOnly')
+    expect(calls[1].variables).toEqual({ migrationId: 'migration-1' })
+    expect(calls[2].query).toContain('mutation CancelLocalOnly')
+  })
 })

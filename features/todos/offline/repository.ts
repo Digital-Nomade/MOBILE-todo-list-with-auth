@@ -20,6 +20,7 @@ function emptyStore(userId: string): UserOfflineStore {
     version: 1,
     userId,
     localOnly: false,
+    localOnlyMigration: null,
     baselineSnapshot: null,
     todos: [],
     queue: [],
@@ -60,6 +61,27 @@ function isQueuedOperation(value: unknown): value is QueuedOperation {
   )
 }
 
+function parseLocalOnlyMigration(
+  value: unknown,
+): UserOfflineStore['localOnlyMigration'] {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+
+  const migration = value as Record<string, unknown>
+  return (
+    typeof migration.migrationId === 'string' &&
+    typeof migration.expiresAt === 'string' &&
+    typeof migration.checksum === 'string'
+  )
+    ? {
+        migrationId: migration.migrationId,
+        expiresAt: migration.expiresAt,
+        checksum: migration.checksum,
+      }
+    : null
+}
+
 function parseStore(raw: string | null, userId: string): UserOfflineStore {
   if (!raw) {
     return emptyStore(userId)
@@ -84,6 +106,7 @@ function parseStore(raw: string | null, userId: string): UserOfflineStore {
       version: 1,
       userId,
       localOnly: Boolean(parsed.localOnly),
+      localOnlyMigration: parseLocalOnlyMigration(parsed.localOnlyMigration),
       baselineSnapshot: Array.isArray(parsed.baselineSnapshot)
         ? parsed.baselineSnapshot.filter(isLocalTodoRecord)
         : null,

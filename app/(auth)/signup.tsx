@@ -105,7 +105,13 @@ export default function SignUpScreen() {
             autoCorrect={false}
             onChangeText={(password) => setValue('password', password)}
             errorMessage={errors['password']?.message}
-            {...register('password', { required: 'Your password must have at least 6 characters', minLength: 6 })}
+            {...register('password', {
+              required: 'Your password must have at least 8 characters',
+              minLength: {
+                value: 8,
+                message: 'Your password must have at least 8 characters',
+              },
+            })}
           />
         </View>
         <View

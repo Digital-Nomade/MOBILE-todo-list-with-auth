@@ -1,5 +1,6 @@
 import ProfileScreen from '@/app/(home)/profile'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
+import { Alert } from 'react-native'
 
 const mockUpdateProfile = jest.fn()
 const mockLogout = jest.fn()
@@ -174,15 +175,27 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Keep todos local only')).toBeTruthy()
   })
 
-  it('enables local-only mode immediately when toggled on', async () => {
+  it('requires destructive confirmation before enabling local-only mode', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(
+      (_title, _message, buttons) => {
+        buttons?.find(button => button.text === 'Move todos')?.onPress?.()
+      },
+    )
     render(<ProfileScreen />)
     await screen.findByDisplayValue('Ada')
 
     fireEvent(screen.getByTestId('profile-local-only-switch'), 'valueChange', true)
 
     await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Move todos to this device?',
+        expect.stringContaining('permanently deletes'),
+        expect.any(Array),
+      )
       expect(mockEnableLocalOnlyMode).toHaveBeenCalledWith(mockDispatch, profile.id)
     })
+
+    alertSpy.mockRestore()
   })
 
   it('renders a safe error state when the profile cannot be loaded', () => {

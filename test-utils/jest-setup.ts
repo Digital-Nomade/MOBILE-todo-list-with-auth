@@ -25,6 +25,8 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => `uuid-${Math.random().toString(36).slice(2, 10)}`),
+  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+  digestStringAsync: jest.fn(async () => 'verified-checksum'),
 }))
 
 // In-memory stand-in for the native Keychain/Keystore during tests.

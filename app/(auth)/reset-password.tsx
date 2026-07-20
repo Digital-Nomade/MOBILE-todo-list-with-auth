@@ -125,10 +125,10 @@ export default function ResetPasswordScreen() {
             onChangeText={(value) => setValue('newPassword', value)}
             errorMessage={errors['newPassword']?.message}
             {...register('newPassword', {
-              required: 'Your password must have at least 6 characters',
+              required: 'Your password must have at least 8 characters',
               minLength: {
-                value: 6,
-                message: 'Your password must have at least 6 characters',
+                value: 8,
+                message: 'Your password must have at least 8 characters',
               },
             })}
           />

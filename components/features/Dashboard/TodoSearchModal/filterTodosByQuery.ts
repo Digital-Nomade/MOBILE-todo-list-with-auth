@@ -11,10 +11,12 @@ export function filterTodosByQuery(
     return []
   }
 
-  return todos.filter(todo => {
-    const title = todo.title.toLowerCase()
-    const description = (todo.description ?? '').toLowerCase()
+  return todos
+    .filter(todo => {
+      const title = todo.title.toLowerCase()
+      const description = (todo.description ?? '').toLowerCase()
 
-    return title.includes(normalized) || description.includes(normalized)
-  })
+      return title.includes(normalized) || description.includes(normalized)
+    })
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
 }

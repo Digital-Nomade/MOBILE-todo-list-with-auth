@@ -30,7 +30,12 @@ export function TodoSearchModal({
   const inputRef = useRef<TextInput>(null)
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebouncer(query, 700)
-  const { results, isSearching, isLocalSearch } = useTodoSearch(debouncedQuery)
+  const {
+    results,
+    isSearching,
+    isLocalSearch,
+    searchError,
+  } = useTodoSearch(debouncedQuery)
 
   useEffect(() => {
     if (!visible) {
@@ -46,7 +51,8 @@ export function TodoSearchModal({
   }, [visible])
 
   const hasQuery = debouncedQuery.trim().length > 0
-  const showNoResults = hasQuery && !isSearching && results.length === 0
+  const showNoResults =
+    hasQuery && !isSearching && !searchError && results.length === 0
 
   function handleClose() {
     setQuery('')
@@ -117,6 +123,11 @@ export function TodoSearchModal({
               <Text style={styles.emptyStateDescription}>
                 Type a title or description keyword to find done and undone todos.
               </Text>
+            </View>
+          ) : searchError ? (
+            <View style={styles.emptyStateContainer} testID="todo-search-error">
+              <Text style={styles.emptyStateTitle}>Search unavailable</Text>
+              <Text style={styles.emptyStateDescription}>{searchError}</Text>
             </View>
           ) : showNoResults ? (
             <View style={styles.emptyStateContainer} testID="todo-search-empty">

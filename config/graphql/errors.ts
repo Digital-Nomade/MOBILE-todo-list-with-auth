@@ -3,6 +3,9 @@ export type GraphQLErrorCode =
   | 'FORBIDDEN'
   | 'TOO_MANY_REQUESTS'
   | 'BAD_USER_INPUT'
+  | 'MIGRATION_IN_PROGRESS'
+  | 'MIGRATION_NOT_FOUND'
+  | 'MIGRATION_EXPIRED'
   | 'INTERNAL_SERVER_ERROR'
   | 'NETWORK_ERROR'
   | 'UNKNOWN'
@@ -28,6 +31,9 @@ const KNOWN_CODES: GraphQLErrorCode[] = [
   'FORBIDDEN',
   'TOO_MANY_REQUESTS',
   'BAD_USER_INPUT',
+  'MIGRATION_IN_PROGRESS',
+  'MIGRATION_NOT_FOUND',
+  'MIGRATION_EXPIRED',
   'INTERNAL_SERVER_ERROR',
 ]
 
@@ -36,6 +42,9 @@ const GENERIC_MESSAGES: Record<GraphQLErrorCode, string> = {
   FORBIDDEN: 'You are not allowed to perform this action.',
   TOO_MANY_REQUESTS: 'Too many attempts. Please wait a moment and try again.',
   BAD_USER_INPUT: 'Please review the submitted information and try again.',
+  MIGRATION_IN_PROGRESS: 'The local-only migration is still in progress.',
+  MIGRATION_NOT_FOUND: 'The local-only migration could not be found.',
+  MIGRATION_EXPIRED: 'The local-only migration expired. Please try again.',
   INTERNAL_SERVER_ERROR: 'Something went wrong. Please try again.',
   NETWORK_ERROR: 'Unable to reach the server. Check your connection and try again.',
   UNKNOWN: 'Something went wrong. Please try again.',

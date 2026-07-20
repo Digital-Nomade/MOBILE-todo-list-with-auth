@@ -209,16 +209,21 @@ the user's profile preference.
   applied locally immediately and queued for later upload.
 - Sync runs in the background (non-blocking) on reconnect, app startup, and
   foreground entry. It does not use OS background tasks.
+- Authenticated `todoChanged` subscriptions trigger a full reconciliation.
+  Reconnects also refetch because subscription events are not replayed.
 - Queued creates send a stable `Idempotency-Key` header; the backend must honor
   it to prevent duplicate todos on retry.
 
 ### Local-only mode (profile toggle, default off)
 
-- Enabling the toggle snapshots all server todos, stores them locally, and
-  stops todo GraphQL traffic. Existing server data is not deleted.
+- Enabling requires destructive confirmation, prepares a server snapshot,
+  verifies its SHA-256 checksum, stores it durably, and only then commits the
+  permanent deletion of those server rows.
+- Interrupted commits retain their migration ID and retry idempotently on
+  startup or reconnect. A failed local save cancels without deleting server data.
 - While enabled, all todo CRUD stays on the device.
-- Disabling the toggle prompts for confirmation, derives upload operations from
-  the local baseline, and starts background sync.
+- Disabling prompts for confirmation and recreates the current local todos on
+  the server in the background.
 
 ### Storage and privacy
 

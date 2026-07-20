@@ -100,17 +100,34 @@ export default function Profile() {
     setFeedback(null)
 
     if (nextValue) {
-      setLocalOnlyLoading(true)
-      try {
-        await enableLocalOnlyMode(dispatch, profile.id)
-        setFeedback('Local-only mode enabled. Todos will stay on this device.')
-      } catch (error) {
-        setFeedback(getUserFacingMessage(error, {
-          UNKNOWN: error instanceof Error ? error.message : 'Could not enable local-only mode.',
-        }))
-      } finally {
-        setLocalOnlyLoading(false)
-      }
+      Alert.alert(
+        'Move todos to this device?',
+        'This saves a verified copy on this device, then permanently deletes those todos from the server. This cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Move todos',
+            style: 'destructive',
+            onPress: async () => {
+              setLocalOnlyLoading(true)
+              try {
+                const localStore = await enableLocalOnlyMode(dispatch, profile.id)
+                setFeedback(
+                  localStore.localOnlyMigration
+                    ? 'Todos are safe on this device. Server cleanup will retry when connected.'
+                    : 'Local-only mode enabled. Server todos were moved to this device.',
+                )
+              } catch (error) {
+                setFeedback(getUserFacingMessage(error, {
+                  UNKNOWN: error instanceof Error ? error.message : 'Could not enable local-only mode.',
+                }))
+              } finally {
+                setLocalOnlyLoading(false)
+              }
+            },
+          },
+        ],
+      )
       return
     }
 
@@ -278,7 +295,7 @@ export default function Profile() {
               }}
             >
               When enabled, todos are stored on this device and are not sent to the server.
-              Existing server todos remain unchanged.
+              Existing server todos are permanently moved to this device.
             </Text>
           </View>
           <Switch

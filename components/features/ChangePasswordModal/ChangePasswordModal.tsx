@@ -152,10 +152,10 @@ export function ChangePasswordModal({
                 onChangeText={(value) => setValue('newPassword', value)}
                 errorMessage={errors.newPassword?.message}
                 {...register('newPassword', {
-                  required: 'Your new password must have at least 6 characters',
+                  required: 'Your new password must have at least 8 characters',
                   minLength: {
-                    value: 6,
-                    message: 'Your new password must have at least 6 characters',
+                    value: 8,
+                    message: 'Your new password must have at least 8 characters',
                   },
                 })}
               />
