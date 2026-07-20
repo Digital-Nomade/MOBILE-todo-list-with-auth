@@ -11,7 +11,6 @@ interface Props {
 export function NotificationItem({notification}: Props) {
   return (
     <Pressable
-      key={`${notification.id}-${notification.todoId}`}
       style={styles.container({ isViewed: notification.isViewed })}
     >
       <Text style={{ color: StylesGuide.colors.dangerLight, fontSize: StylesGuide.fontSizes.lg, fontWeight: 300 }}>
