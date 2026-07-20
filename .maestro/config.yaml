@@ -1,0 +1,5 @@
+flows:
+  - "flows/*"
+testOutputDir: ".maestro/artifacts"
+executionOrder:
+  continueOnFailure: false

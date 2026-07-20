@@ -1,7 +1,7 @@
 import { Button, DatePicker, Input } from "@/components/atoms"
 import { StylesGuide } from "@/constants/StyleGuide"
-import { useCreateTodoMutation, useUpdateTodoMutation } from "@/features/todos/todoApi"
-import { Todo, TodoCreationPayload } from "@/types/todo-types"
+import { useOfflineTodoMutations } from "@/features/todos/offline/hooks"
+import { TodoCreationPayload, TodoViewModel } from "@/types/todo-types"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import React, { useEffect, useState } from "react"
@@ -9,18 +9,18 @@ import { useForm } from "react-hook-form"
 import { Text, View } from "react-native"
 
 interface Props {
-  todo?: Todo
+  todo?: TodoViewModel
   showCancel?: boolean
   isEditing?: boolean
+  onClose?: () => void
 }
 
-export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props) {
+export function TodoDetails({ todo, showCancel = true, isEditing = false, onClose }: Props) {
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    reset,
     formState: {
       errors,
       isDirty,
@@ -30,57 +30,56 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
   const router = useRouter()
   const [descriptionLength, setLength] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [createTodo, { isLoading }] = useCreateTodoMutation()
-  const [updateTodo] = useUpdateTodoMutation()
+  const { createTodo, updateTodo } = useOfflineTodoMutations()
+
+  useEffect(() => {
+    // DatePicker is a controlled function component, so react-hook-form's
+    // native-input ref must not be spread onto it.
+    register('dueTo')
+    register('reminderOn')
+  }, [register])
   
   useEffect(() => {
     if (todo) {
       setValue('description', todo.description)
       setValue('title', todo.title)
-      setValue('dueTo', todo?.dueTo)
-      setValue('reminderOn', todo?.reminderOn)
+      setValue('dueTo', todo.dueTo ? new Date(todo.dueTo) : undefined)
+      setValue('reminderOn', todo.reminderOn ? new Date(todo.reminderOn) : undefined)
     }
-  }, [todo])
+  }, [todo, setValue])
 
-  async function onSubmit(data: TodoCreationPayload ) {
-    console.log('click')
-    if (isEditing) {
-      const updatedTodo = {
-        ...todo,
-        ...data,
-      }
-
-      onUpdateTodo(updatedTodo)
-    } else {
-      onCreateTodo(data)
+  function dismiss() {
+    if (onClose) {
+      onClose()
+      return
     }
+
     router.dismiss()
   }
 
-  async function onCreateTodo(todo: TodoCreationPayload) {
+  async function onSubmit(data: TodoCreationPayload) {
+    setLoading(true)
     try {
-      const result = await createTodo(todo)
-      console.log(result)
-    } catch (error: any) {
-      console.log(error)
-    }
-  }
-
-  async function onUpdateTodo(todo: Todo) {
-    try {
-      const result = await updateTodo(todo)
-    } catch (error: any) {
-
+      if (isEditing && todo) {
+        await updateTodo({ id: todo.id, ...data })
+      } else {
+        await createTodo(data)
+      }
+      dismiss()
+    } catch {
+      // keep the form open so the user can retry
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <>
       <Input
+        testID="todo-title-input"
         style={{ marginBottom: 48, fontWeight: 300, }}
         placeholder="New to do"
         onChangeText={(text) => {
-          console.log(text)
           setValue('title', text, { shouldDirty: true })
         }}
         placeholderTextColor={StylesGuide.colors.white}
@@ -99,6 +98,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           Description
         </Text>
         <Input
+          testID="todo-description-input"
           style={{ maxHeight: 250, marginBottom: 8 }}
           multiline
           numberOfLines={12}
@@ -132,7 +132,6 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           <DatePicker
             minimumDate={new Date()}
             value={watch('dueTo')}
-            {...register('dueTo')}
             onChange={(date) => setValue('dueTo', date, { shouldDirty: true})}
             mode="date" />
         </View>
@@ -150,7 +149,6 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           <DatePicker
             minimumDate={new Date()}
             value={watch('reminderOn')}
-            {...register('reminderOn')}
             onChange={(value) => setValue('reminderOn', value, { shouldDirty: true })}
             mode="datetime"
             Icon={<MaterialCommunityIcons name="calendar-clock" size={24} color={StylesGuide.colors.dangerLight} />} />
@@ -165,16 +163,18 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
         }}
       >
         {showCancel && <Button
+          testID="todo-cancel-button"
           style={{ opacity: loading ? 0.5 : 1 }}
           buttonType="danger"
           variant="outlined"
           width={'48%'}
-          onPress={() => router.dismiss()}
+          onPress={dismiss}
           disabled={loading}
         >
           Cancel
         </Button>}
         <Button
+          testID="todo-save-button"
           style={{ opacity: loading || !isDirty ? 0.5 : 1 }}
           buttonType="success"
           variant="outlined"

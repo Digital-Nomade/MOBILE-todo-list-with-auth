@@ -1,113 +1,150 @@
 import { TodoItem } from "@/components/features/Dashboard/TodoItem/TodoItem";
+import { TodoSearchModal } from "@/components/features/Dashboard/TodoSearchModal/TodoSearchModal";
+import { TodoSyncStatusBanner } from "@/components/features/TodoSyncStatusBanner/TodoSyncStatusBanner";
+import { PlusIcon } from "@/components/icons/PlusIcon";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
+import { useAppDispatch } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
-import { useFetchTodosQuery } from "@/features/todos/todoApi";
-import { useDebouncer } from "@/hooks/useDebouncer";
-import { Todo } from "@/types/todo-types";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useOfflineTodoMutations, useOfflineTodos } from "@/features/todos/offline/hooks";
+import { openAddTodoModal } from "@/features/ui/modalSlice";
+import { TodoViewModel } from "@/types/todo-types";
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, View } from "react-native";
-import { FlatList, RefreshControl, TextInput } from "react-native-gesture-handler";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { FlatList, RefreshControl } from "react-native-gesture-handler";
 
 export default function DashboardScreen() {
+  const dispatch = useAppDispatch()
   const [refreshing, setRefreshing] = useState(false)
-  const [query, setQuery] = useState('')
-  const debouncedValue = useDebouncer(query, 800)
-  const [loading, setLoading] = useState(false)
-  const { data, isLoading, isFetching, refetch } = useFetchTodosQuery()
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [searchVisible, setSearchVisible] = useState(false)
+  const { data, isLoading, isFetching, refetch, syncState } = useOfflineTodos()
+  const { updateTodo } = useOfflineTodoMutations()
+  const [todos, setTodos] = useState<TodoViewModel[]>([])
 
   useEffect(() => {
-    if (query && debouncedValue) {
-      setLoading(true)
-      setTimeout(() => {
-        setLoading(false)
-      }, 1000)
-      // TODO: Fetch data
-    }
-  }, [debouncedValue])
+    setTodos(data ?? [])
+  }, [data])
 
-  useEffect(() => {
-    if (data?.data.length) {
-      setTodos(data.data)
+  async function handleCheckSubmit(todoId: string, isChecked: boolean) {
+    try {
+      await updateTodo({ id: todoId, done: isChecked })
+    } catch {
+      // local state remains authoritative until sync completes
     }
-  }, [todos])
-
-  function handleCheckSubmit(todoId: string, isChecked: boolean) {
-    
   }
 
-  function onRefresh() {
+  async function onRefresh() {
     setRefreshing(true)
     try {
-      refetch()
-    } catch(error: any) {
-
+      await refetch()
+    } finally {
+      setRefreshing(false)
     }
   }
 
-  function renderInputAction() {
-    if (loading) {
-      return (
-        <ActivityIndicator color={StylesGuide.colors.dangerLight}/>
-      )
-    } else if (!loading && !!query) {
-      return (
-        <Pressable onPress={() => setQuery('')}>
-          <MaterialCommunityIcons name="close-circle" size={24} color={StylesGuide.colors.dangerLight} />
-        </Pressable>
-      )
-    } else {
-      return (
+  const isInitialLoading = (isLoading || isFetching) && todos.length === 0
+  const hasTodos = todos.length > 0
+
+  return (
+    <GlobalWrapper>
+      <TodoSyncStatusBanner syncState={syncState} />
+      <Pressable
+        testID="dashboard-add-todo-button"
+        style={{ marginBottom: 26 }}
+        onPress={() => dispatch(openAddTodoModal())}
+      >
+        <PlusIcon />
+      </Pressable>
+      <Pressable
+        testID="dashboard-search-button"
+        onPress={() => setSearchVisible(true)}
+        style={{
+          borderWidth: 1,
+          borderColor: StylesGuide.colors.dangerLight,
+          padding: 12,
+          borderRadius: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Text style={{ color: '#FFFFFFaa', fontSize: StylesGuide.fontSizes.md }}>
+          search to do...
+        </Text>
         <SimpleLineIcons
           name="magnifier"
           size={20}
           color={StylesGuide.colors.dangerLight}
         />
-      )
-    }
-  }
+      </Pressable>
 
-  return (
-    <GlobalWrapper>
-      <View style={{ position: 'relative', }}>
-        <TextInput
-          style={{
-            borderWidth: 1,
-            borderColor: StylesGuide.colors.dangerLight,
-            padding: 8,
-            borderRadius: 12,
-            paddingRight: 32,
-            color: StylesGuide.colors.dangerLight
-          }}
-          placeholder="search to do..."
-          placeholderTextColor='#FFFFFFaa'
-          onChangeText={(text) => setQuery(text)}
-          value={query}
+      {isInitialLoading ? (
+        <ActivityIndicator
+          style={{ marginTop: 48 }}
+          color={StylesGuide.colors.dangerLight}
+          size="large"
         />
-        <View style={{ position: 'absolute', right: 8, top: 6 }}>
-          {renderInputAction()}
+      ) : !hasTodos ? (
+        <View
+          testID="dashboard-empty-state"
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: 24,
+            marginTop: 48,
+          }}
+        >
+          <Text
+            style={{
+              color: StylesGuide.colors.white,
+              fontSize: StylesGuide.fontSizes.xl,
+              fontWeight: 300,
+              marginBottom: 8,
+              textAlign: 'center',
+            }}
+          >
+            No todos yet
+          </Text>
+          <Text
+            style={{
+              color: StylesGuide.colors.white,
+              fontSize: StylesGuide.fontSizes.md,
+              fontWeight: 200,
+              textAlign: 'center',
+              opacity: 0.8,
+            }}
+          >
+            Your todos will appear here once you create them.
+          </Text>
         </View>
-      </View>
-      <FlatList
-        style={{ paddingTop: 48 }}
-        data={todos}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[StylesGuide.colors.primaryTransparency]}
-            tintColor={StylesGuide.colors.primaryTransparency}
-          />
-        }
-        renderItem={(data) => (
-          <TodoItem
-            todo={data.item}
-            onCheck={handleCheckSubmit}
-            isChecked={!!data.item.done}
-          />
-        )}
+      ) : (
+        <FlatList
+          style={{ paddingTop: 48 }}
+          data={todos}
+          keyExtractor={item => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[StylesGuide.colors.primaryTransparency]}
+              tintColor={StylesGuide.colors.primaryTransparency}
+            />
+          }
+          renderItem={({ item }) => (
+            <TodoItem
+              todo={item}
+              onCheck={handleCheckSubmit}
+              isChecked={!!item.done}
+            />
+          )}
+        />
+      )}
+
+      <TodoSearchModal
+        visible={searchVisible}
+        onClose={() => setSearchVisible(false)}
+        onCheck={handleCheckSubmit}
       />
     </GlobalWrapper>
   )

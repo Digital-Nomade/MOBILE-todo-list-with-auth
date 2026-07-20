@@ -1,0 +1,66 @@
+appId: com.digitalnomade.todo
+name: Authenticated login and todo CRUD
+tags:
+  - requires-backend
+  - auth
+  - todos
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-identifier-input"
+- inputText: "${TEST_IDENTIFIER}"
+- tapOn:
+    id: "login-password-input"
+- inputText: "${TEST_PASSWORD}"
+- hideKeyboard
+- tapOn:
+    id: "login-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+- runScript: "../scripts/generate-todo-title.js"
+- tapOn:
+    id: "add-todo-button"
+- assertVisible:
+    id: "todo-title-input"
+- tapOn:
+    id: "todo-title-input"
+- inputText: "${output.todoTitle}"
+- tapOn:
+    id: "todo-description-input"
+- inputText: "Created by the Maestro end-to-end suite"
+- hideKeyboard
+- tapOn:
+    id: "todo-save-button"
+- extendedWaitUntil:
+    visible: "${output.todoTitle}"
+    timeout: 20000
+- tapOn:
+    id: "dashboard-tab"
+- extendedWaitUntil:
+    visible: "${output.todoTitle}"
+    timeout: 20000
+- tapOn: "${output.todoTitle}"
+- extendedWaitUntil:
+    visible:
+      id: "todo-delete-button"
+    timeout: 10000
+- tapOn:
+    id: "todo-delete-button"
+- extendedWaitUntil:
+    notVisible: "${output.todoTitle}"
+    timeout: 20000
+- tapOn:
+    id: "profile-tab"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 20000
+- tapOn:
+    id: "profile-logout-button"
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 10000

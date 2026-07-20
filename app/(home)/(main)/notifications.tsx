@@ -37,8 +37,11 @@ export default function Notifications() {
         ? (
           <SkeletonList lines={10} />
         )
-        : notifications?.map(notification => (
-          <NotificationItem notification={notification} />
+        : notifications.map(notification => (
+          <NotificationItem
+            key={notification.id}
+            notification={notification}
+          />
         ))
       }
     </GlobalWrapper>

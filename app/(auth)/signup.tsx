@@ -1,9 +1,13 @@
 import { Button, Input } from "@/components/atoms";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
-import { useAppSelector } from "@/config/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
+import { persistLoginDataForSignUp } from "@/features/auth/authFlowSlice";
+import {
+  clearStoredVerificationFlow,
+  normalizeVerificationEmail,
+} from "@/features/auth/verificationFlowStorage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Pressable, Text, View } from "react-native";
 
@@ -15,7 +19,8 @@ interface Inputs {
 
 export default function SignUpScreen() {
   const router = useRouter()
-  const { email, password } = useAppSelector(state => state.auth)
+  const dispatch = useAppDispatch()
+  const { signupEmail: email, signupPassword: password } = useAppSelector(state => state.auth)
   const {
     register,
     handleSubmit,
@@ -25,14 +30,14 @@ export default function SignUpScreen() {
       errors
     }
   } = useForm<Inputs>()
-  const [loading, setLoading] = useState(false)
 
-  function onSubmit(data: unknown) {
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      router.navigate('/(auth)/signup-profile')
-    }, 2000)
+  function onSubmit(data: Inputs) {
+    clearStoredVerificationFlow()
+    dispatch(persistLoginDataForSignUp({
+      email: normalizeVerificationEmail(data.email),
+      password: data.password,
+    }))
+    router.navigate('/(auth)/signup-profile')
   }
 
   const { colors, fontSizes } = StylesGuide
@@ -40,6 +45,7 @@ export default function SignUpScreen() {
   return (
     <GlobalWrapper>
       <View
+        testID="signup-screen"
         style={{
           flexDirection: 'column',
           justifyContent: 'center',
@@ -59,6 +65,7 @@ export default function SignUpScreen() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-email-input"
             placeholder="email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -87,6 +94,7 @@ export default function SignUpScreen() {
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-password-input"
             defaultValue={password}
             style={{ marginBottom: 16 }}
             placeholder="password"
@@ -97,13 +105,20 @@ export default function SignUpScreen() {
             autoCorrect={false}
             onChangeText={(password) => setValue('password', password)}
             errorMessage={errors['password']?.message}
-            {...register('password', { required: 'Your password must have at least 6 characters', minLength: 6 })}
+            {...register('password', {
+              required: 'Your password must have at least 8 characters',
+              minLength: {
+                value: 8,
+                message: 'Your password must have at least 8 characters',
+              },
+            })}
           />
         </View>
         <View
           style={{ marginBottom: 40 }}
         >
           <Input
+            testID="signup-confirm-password-input"
             style={{ marginBottom: 16 }}
             placeholder="retype password"
             keyboardType="visible-password"
@@ -112,10 +127,11 @@ export default function SignUpScreen() {
             autoComplete="off"
             autoCorrect={false}
             onChangeText={(retypepassword) => setValue('retypePassword', retypepassword)}
-            errorMessage={errors['password']?.message}
-            {...register('password',
+            errorMessage={errors['retypePassword']?.message}
+            {...register('retypePassword',
               { 
-                required: true, validate: (data: unknown) => {
+                required: 'You must retype your password',
+                validate: (data: string) => {
                   if(watch('password') !== data) {
                     return 'Your passwords doesn`t match'
                   }
@@ -126,10 +142,10 @@ export default function SignUpScreen() {
         </View>
         <View style={{ marginBottom: 40 }}>
           <Button
+            testID="signup-next-button"
             buttonType="secondary"
             variant="fill"
             rounded
-            loading={loading}
             onPress={handleSubmit(onSubmit)}
           >
             next

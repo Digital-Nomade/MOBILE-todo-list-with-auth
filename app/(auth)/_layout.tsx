@@ -3,9 +3,19 @@ import { useSession } from "@/hooks/useSession";
 import { Redirect, Stack } from "expo-router";
 
 export default function AuthLayout() {
-  const { session } = useSession()
+  const { isInitializing, isAuthenticated, user } = useSession()
 
-  if (session) return <Redirect href="/(home)" />
+  if (isInitializing) return null
+
+  if (isAuthenticated && user?.status === 'ACTIVE') return <Redirect href="/(home)" />
+
+  if (isAuthenticated && user?.status === 'PENDING_VERIFICATION') {
+    return <Redirect href="/(auth)/check-email" />
+  }
+
+  if (isAuthenticated && user?.status === 'SUSPENDED') {
+    return <Redirect href="/(auth)/account-unavailable" />
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

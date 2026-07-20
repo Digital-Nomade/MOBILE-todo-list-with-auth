@@ -65,5 +65,30 @@ export const styles = StyleSheet.create({
   },
   createdAtTextVariant: {
     fontWeight: 300,
-  }
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  emptyStateTitle: {
+    color: StylesGuide.colors.white,
+    fontSize: StylesGuide.fontSizes.xl,
+    fontWeight: 300,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: StylesGuide.colors.white,
+    fontSize: StylesGuide.fontSizes.md,
+    fontWeight: 200,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    marginTop: 'auto',
+    justifyContent: 'space-between',
+  },
 })

@@ -1,48 +1,95 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
-import {
-  AuthData,
-  AuthenticateUserPayload,
-  LoginAccountPayload
-} from './authTypes'
+import { AuthPayload, AuthState, AuthUserSnapshot, LoginAccountPayload } from './authTypes'
 
-const initialState: AuthData = {
-  email: '',
-  password: '',
-  isUserAuthenticated: false,
-  credentials: {
-    accessToken: null,
-  },
+interface VerificationFlowPayload {
+  email: string
+  message: string
+  resendAvailableAt?: number | null
+}
+
+const initialState: AuthState = {
+  sessionStatus: 'initializing',
+  accessToken: null,
+  expiresIn: null,
+  user: null,
+  signupEmail: '',
+  signupPassword: '',
+  verificationEmail: '',
+  verificationMessage: '',
+  verificationResendAvailableAt: null,
 }
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    persistLoginDataForSignUp: (state, { payload: { email, password}}: PayloadAction<LoginAccountPayload>) => {
-      state.email = email
-      state.password = password
-
+    persistLoginDataForSignUp: (state, { payload: { email, password } }: PayloadAction<LoginAccountPayload>) => {
+      state.signupEmail = email
+      state.signupPassword = password
+      state.verificationEmail = ''
+      state.verificationMessage = ''
+      state.verificationResendAvailableAt = null
     },
     resetAuthState: (state) => {
-      state.email = ''
-      state.password = ''
+      state.signupEmail = ''
+      state.signupPassword = ''
     },
-    authenticateUser: (state, { payload: { isAuthenticated, accessToken } }: PayloadAction<AuthenticateUserPayload>) => {
-      state.isUserAuthenticated = isAuthenticated
-      state.credentials.accessToken = accessToken
+    setVerificationFlow: (state, { payload }: PayloadAction<VerificationFlowPayload>) => {
+      state.verificationEmail = payload.email
+      state.verificationMessage = payload.message
+      state.verificationResendAvailableAt = payload.resendAvailableAt ?? null
+    },
+    setVerificationResendAvailableAt: (state, { payload }: PayloadAction<number | null>) => {
+      state.verificationResendAvailableAt = payload
+    },
+    clearVerificationFlow: (state) => {
+      state.verificationEmail = ''
+      state.verificationMessage = ''
+      state.verificationResendAvailableAt = null
+    },
+    /** Replaces both tokens at once after login or a successful refresh. */
+    setCredentials: (state, { payload }: PayloadAction<AuthPayload>) => {
+      state.sessionStatus = 'authenticated'
+      state.accessToken = payload.accessToken
+      state.expiresIn = payload.expiresIn
+      state.user = payload.user
+    },
+    setOfflineSession: (state, { payload }: PayloadAction<AuthUserSnapshot>) => {
+      state.sessionStatus = 'offline-authenticated'
+      state.accessToken = null
+      state.expiresIn = null
+      state.user = payload
+    },
+    setUserSnapshot: (state, { payload }: PayloadAction<AuthUserSnapshot>) => {
+      state.user = payload
+    },
+    /** Marks startup restoration as finished when no session could be restored. */
+    sessionRestorationFinished: (state) => {
+      if (state.sessionStatus === 'initializing') {
+        state.sessionStatus = 'unauthenticated'
+      }
     },
     signOut: (state) => {
-      state.credentials.accessToken = null
-    }
-  }
+      state.sessionStatus = 'unauthenticated'
+      state.accessToken = null
+      state.expiresIn = null
+      state.user = null
+    },
+  },
 })
 
 export const {
-  resetAuthState,
-  authenticateUser,
-  signOut,
   persistLoginDataForSignUp,
+  resetAuthState,
+  setVerificationFlow,
+  setVerificationResendAvailableAt,
+  clearVerificationFlow,
+  setCredentials,
+  setOfflineSession,
+  setUserSnapshot,
+  sessionRestorationFinished,
+  signOut,
 } = authSlice.actions
 
 export default authSlice.reducer

@@ -1,4 +1,6 @@
 import authReducer from '@/features/auth/authFlowSlice'
+import offlineTodosReducer from '@/features/todos/offline/offlineSlice'
+import uiReducer from '@/features/ui/modalSlice'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import {
@@ -11,14 +13,19 @@ import {
   REHYDRATE
 } from 'redux-persist'
 import { api } from './api'
+import { signOutMiddleware } from './signOutMiddleware'
 
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
+  // Tokens, RTK cache, and offline reactive state must never be written to AsyncStorage.
+  blacklist: ['auth', api.reducerPath, 'offlineTodos', 'ui'],
 }
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  offlineTodos: offlineTodosReducer,
+  ui: uiReducer,
   [api.reducerPath]: api.reducer
 })
 
@@ -37,7 +44,7 @@ export const store = configureStore({
         REGISTER,
       ],
     }
-  }).concat([api.middleware]),
+  }).concat([api.middleware, signOutMiddleware]),
   devTools: process.env.NODE_ENV !== 'production'
 })
 

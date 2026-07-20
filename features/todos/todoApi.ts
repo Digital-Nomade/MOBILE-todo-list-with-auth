@@ -1,37 +1,155 @@
 import { api } from "@/config/redux/api";
-import { Todo, TodoCreationPayload, TodoRequestPayloadWithPagination } from "@/types/todo-types";
+import {
+  CommittedTodoLocalOnlyMigration,
+  PaginatedTodos,
+  PreparedTodoLocalOnlyMigration,
+  Todo,
+  TodoCreationPayload,
+  TodoPaginationInput,
+  TodoUpdatePayload,
+} from "@/types/todo-types";
+import {
+  CANCEL_LOCAL_ONLY_MUTATION,
+  COMMIT_LOCAL_ONLY_MUTATION,
+  CREATE_TODO_MUTATION,
+  DELETE_TODO_MUTATION,
+  PREPARE_LOCAL_ONLY_MUTATION,
+  SEARCH_TODOS_QUERY,
+  TODO_QUERY,
+  TODOS_QUERY,
+  UPDATE_TODO_MUTATION,
+} from "./documents";
 
-const todoApi = api.injectEndpoints({
+export type CreateTodoArgs = TodoCreationPayload & {
+  idempotencyKey?: string
+}
+
+const DEFAULT_PAGINATION: TodoPaginationInput = {
+  currentPage: 1,
+  limit: 10,
+  orderBy: 'DESC',
+}
+
+/** DateTime inputs must reach the backend as ISO-8601 strings. */
+function toISOString(value: Date | string | null | undefined): string | null | undefined {
+  if (value === undefined || value === null) {
+    return value
+  }
+
+  return value instanceof Date ? value.toISOString() : value
+}
+
+export type SearchTodosArgs = {
+  term: string
+} & TodoPaginationInput
+
+export const todoApi = api.injectEndpoints({
   overrideExisting: true,
   endpoints: build => ({
-    fetchTodos: build.query<TodoRequestPayloadWithPagination, void>({
-      query: () => ({
-        url: '/todo',
-        method: 'GET',
+    fetchTodos: build.query<PaginatedTodos, TodoPaginationInput | void>({
+      query: (pagination) => ({
+        document: TODOS_QUERY,
+        variables: {
+          pagination: { ...DEFAULT_PAGINATION, ...(pagination ?? {}) },
+        },
       }),
+      transformResponse: (data: { todos: PaginatedTodos }) => data.todos,
       providesTags: ['todos']
     }),
-    createTodo: build.mutation({
-      query: (todo: TodoCreationPayload) => ({
-        url: '/todo',
-        method: 'POST',
-        body: { ...todo },
+    fetchTodo: build.query<Todo, string>({
+      query: (id) => ({
+        document: TODO_QUERY,
+        variables: { id },
       }),
+      transformResponse: (data: { todo: Todo }) => data.todo,
+      providesTags: ['todos'],
+    }),
+    searchTodos: build.query<PaginatedTodos, SearchTodosArgs>({
+      query: ({ term, ...pagination }) => ({
+        document: SEARCH_TODOS_QUERY,
+        variables: {
+          term,
+          pagination: { ...DEFAULT_PAGINATION, ...pagination },
+        },
+      }),
+      transformResponse: (data: { searchTodos: PaginatedTodos }) => data.searchTodos,
+      providesTags: ['todos'],
+    }),
+    createTodo: build.mutation<Todo, CreateTodoArgs>({
+      query: (todo) => ({
+        document: CREATE_TODO_MUTATION,
+        variables: {
+          input: {
+            title: todo.title,
+            description: todo.description,
+            dueTo: toISOString(todo.dueTo),
+            reminderOn: toISOString(todo.reminderOn),
+          },
+        },
+        idempotencyKey: todo.idempotencyKey,
+      }),
+      transformResponse: (data: { createTodo: Todo }) => data.createTodo,
       invalidatesTags: ['todos'],
     }),
-    updateTodo: build.mutation({
-      query: (todo: Todo) => ({
-        url: `/todo/${todo.id}`,
-        method: 'PATCH',
-        body: { ...todo },
+    updateTodo: build.mutation<Todo, TodoUpdatePayload>({
+      query: ({ id, ...input }) => ({
+        document: UPDATE_TODO_MUTATION,
+        variables: {
+          id,
+          input: {
+            ...input,
+            dueTo: toISOString(input.dueTo),
+            reminderOn: toISOString(input.reminderOn),
+          },
+        },
       }),
+      transformResponse: (data: { updateTodo: Todo }) => data.updateTodo,
       invalidatesTags: ['todos'],
-    })
+    }),
+    deleteTodo: build.mutation<boolean, string>({
+      query: (id) => ({
+        document: DELETE_TODO_MUTATION,
+        variables: { id },
+      }),
+      transformResponse: (data: { deleteTodo: boolean }) => data.deleteTodo,
+      invalidatesTags: ['todos'],
+    }),
+    prepareLocalOnlyMigration: build.mutation<PreparedTodoLocalOnlyMigration, void>({
+      query: () => ({ document: PREPARE_LOCAL_ONLY_MUTATION }),
+      transformResponse: (data: {
+        prepareTodoLocalOnlyMigration: PreparedTodoLocalOnlyMigration
+      }) => data.prepareTodoLocalOnlyMigration,
+    }),
+    commitLocalOnlyMigration: build.mutation<CommittedTodoLocalOnlyMigration, string>({
+      query: (migrationId) => ({
+        document: COMMIT_LOCAL_ONLY_MUTATION,
+        variables: { migrationId },
+      }),
+      transformResponse: (data: {
+        commitTodoLocalOnlyMigration: CommittedTodoLocalOnlyMigration
+      }) => data.commitTodoLocalOnlyMigration,
+      invalidatesTags: ['todos'],
+    }),
+    cancelLocalOnlyMigration: build.mutation<{ message: string }, string>({
+      query: (migrationId) => ({
+        document: CANCEL_LOCAL_ONLY_MUTATION,
+        variables: { migrationId },
+      }),
+      transformResponse: (data: {
+        cancelTodoLocalOnlyMigration: { message: string }
+      }) => data.cancelTodoLocalOnlyMigration,
+    }),
   })
 })
 
 export const {
   useFetchTodosQuery,
+  useFetchTodoQuery,
+  useSearchTodosQuery,
   useCreateTodoMutation,
   useUpdateTodoMutation,
+  useDeleteTodoMutation,
+  usePrepareLocalOnlyMigrationMutation,
+  useCommitLocalOnlyMigrationMutation,
+  useCancelLocalOnlyMigrationMutation,
 } = todoApi
