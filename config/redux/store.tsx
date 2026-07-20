@@ -1,5 +1,6 @@
 import authReducer from '@/features/auth/authFlowSlice'
 import offlineTodosReducer from '@/features/todos/offline/offlineSlice'
+import uiReducer from '@/features/ui/modalSlice'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import {
@@ -18,12 +19,13 @@ const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
   // Tokens, RTK cache, and offline reactive state must never be written to AsyncStorage.
-  blacklist: ['auth', api.reducerPath, 'offlineTodos'],
+  blacklist: ['auth', api.reducerPath, 'offlineTodos', 'ui'],
 }
 
 const rootReducer = combineReducers({
   auth: authReducer,
   offlineTodos: offlineTodosReducer,
+  ui: uiReducer,
   [api.reducerPath]: api.reducer
 })
 

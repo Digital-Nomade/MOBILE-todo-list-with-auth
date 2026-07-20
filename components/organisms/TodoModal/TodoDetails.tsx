@@ -12,9 +12,10 @@ interface Props {
   todo?: TodoViewModel
   showCancel?: boolean
   isEditing?: boolean
+  onClose?: () => void
 }
 
-export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props) {
+export function TodoDetails({ todo, showCancel = true, isEditing = false, onClose }: Props) {
   const {
     register,
     handleSubmit,
@@ -30,6 +31,13 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
   const [descriptionLength, setLength] = useState(0)
   const [loading, setLoading] = useState(false)
   const { createTodo, updateTodo } = useOfflineTodoMutations()
+
+  useEffect(() => {
+    // DatePicker is a controlled function component, so react-hook-form's
+    // native-input ref must not be spread onto it.
+    register('dueTo')
+    register('reminderOn')
+  }, [register])
   
   useEffect(() => {
     if (todo) {
@@ -40,6 +48,15 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
     }
   }, [todo, setValue])
 
+  function dismiss() {
+    if (onClose) {
+      onClose()
+      return
+    }
+
+    router.dismiss()
+  }
+
   async function onSubmit(data: TodoCreationPayload) {
     setLoading(true)
     try {
@@ -48,7 +65,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
       } else {
         await createTodo(data)
       }
-      router.dismiss()
+      dismiss()
     } catch {
       // keep the form open so the user can retry
     } finally {
@@ -115,7 +132,6 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           <DatePicker
             minimumDate={new Date()}
             value={watch('dueTo')}
-            {...register('dueTo')}
             onChange={(date) => setValue('dueTo', date, { shouldDirty: true})}
             mode="date" />
         </View>
@@ -133,7 +149,6 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           <DatePicker
             minimumDate={new Date()}
             value={watch('reminderOn')}
-            {...register('reminderOn')}
             onChange={(value) => setValue('reminderOn', value, { shouldDirty: true })}
             mode="datetime"
             Icon={<MaterialCommunityIcons name="calendar-clock" size={24} color={StylesGuide.colors.dangerLight} />} />
@@ -153,7 +168,7 @@ export function TodoDetails({ todo, showCancel = true, isEditing = false}: Props
           buttonType="danger"
           variant="outlined"
           width={'48%'}
-          onPress={() => router.dismiss()}
+          onPress={dismiss}
           disabled={loading}
         >
           Cancel

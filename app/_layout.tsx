@@ -1,4 +1,5 @@
 import { store } from "@/config/redux/store";
+import { GlobalTodoModal } from "@/components/features/GlobalTodoModal/GlobalTodoModal";
 import { StartupGate, SplashController } from "@/features/startup/StartupShell";
 import { TodoSyncProvider } from "@/features/todos/offline/TodoSyncProvider";
 import { SessionProvider } from "@/hooks/useSession";
@@ -24,6 +25,7 @@ export default function RootLayout() {
                 <Slot />
               </SplashController>
             </StartupGate>
+            <GlobalTodoModal />
           </TodoSyncProvider>
         </SessionProvider>
       </GestureHandlerRootView>

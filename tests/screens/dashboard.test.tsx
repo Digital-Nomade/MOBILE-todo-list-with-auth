@@ -1,7 +1,10 @@
 import DashboardScreen from '@/app/(home)/(dashboard)/index'
+import { GlobalTodoModal } from '@/components/features/GlobalTodoModal/GlobalTodoModal'
 import { TodoSearchModal } from '@/components/features/Dashboard/TodoSearchModal/TodoSearchModal'
 import { TodoViewModel } from '@/types/todo-types'
+import { createTestStore } from '@/test-utils'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
+import { Provider } from 'react-redux'
 
 const mockUpdateTodo = jest.fn()
 const mockUseTodoSearch = jest.fn()
@@ -44,6 +47,7 @@ jest.mock('@/features/todos/offline/hooks', () => ({
   useOfflineTodos: () => mockTodosResult,
   useOfflineTodoMutations: () => ({
     updateTodo: mockUpdateTodo,
+    createTodo: jest.fn(),
   }),
   useTodoSearch: (term: string) => mockUseTodoSearch(term),
 }))
@@ -65,6 +69,18 @@ jest.mock('expo-router', () => ({
     dismissAll: jest.fn(),
   }),
 }))
+
+function renderDashboard() {
+  const store = createTestStore()
+
+  render(
+    <Provider store={store}>
+      <DashboardScreen />
+    </Provider>,
+  )
+
+  return store
+}
 
 describe('DashboardScreen', () => {
   beforeEach(() => {
@@ -97,7 +113,7 @@ describe('DashboardScreen', () => {
   })
 
   it('shows the dashboard empty state when there are no todos', () => {
-    render(<DashboardScreen />)
+    renderDashboard()
 
     expect(screen.getByTestId('dashboard-empty-state')).toBeTruthy()
     expect(screen.getByText('No todos yet')).toBeTruthy()
@@ -106,12 +122,28 @@ describe('DashboardScreen', () => {
   it('opens the search modal from the dashboard search button', () => {
     mockTodosResult.data = [createTodo(1, { title: 'Buy groceries' })]
 
-    render(<DashboardScreen />)
+    renderDashboard()
 
     fireEvent.press(screen.getByTestId('dashboard-search-button'))
 
     expect(screen.getByTestId('todo-search-modal')).toBeTruthy()
     expect(screen.getByTestId('todo-search-input')).toBeTruthy()
+  })
+
+  it('opens the global add todo modal from the dashboard add button', () => {
+    const store = createTestStore()
+
+    render(
+      <Provider store={store}>
+        <DashboardScreen />
+        <GlobalTodoModal />
+      </Provider>,
+    )
+
+    fireEvent.press(screen.getByTestId('dashboard-add-todo-button'))
+
+    expect(store.getState().ui.activeModal).toBe('addTodo')
+    expect(screen.getByTestId('todo-title-input')).toBeTruthy()
   })
 })
 

@@ -1,9 +1,12 @@
 import { TodoItem } from "@/components/features/Dashboard/TodoItem/TodoItem";
 import { TodoSearchModal } from "@/components/features/Dashboard/TodoSearchModal/TodoSearchModal";
 import { TodoSyncStatusBanner } from "@/components/features/TodoSyncStatusBanner/TodoSyncStatusBanner";
+import { PlusIcon } from "@/components/icons/PlusIcon";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
+import { useAppDispatch } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
 import { useOfflineTodoMutations, useOfflineTodos } from "@/features/todos/offline/hooks";
+import { openAddTodoModal } from "@/features/ui/modalSlice";
 import { TodoViewModel } from "@/types/todo-types";
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { useEffect, useState } from "react";
@@ -11,6 +14,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { FlatList, RefreshControl } from "react-native-gesture-handler";
 
 export default function DashboardScreen() {
+  const dispatch = useAppDispatch()
   const [refreshing, setRefreshing] = useState(false)
   const [searchVisible, setSearchVisible] = useState(false)
   const { data, isLoading, isFetching, refetch, syncState } = useOfflineTodos()
@@ -44,6 +48,13 @@ export default function DashboardScreen() {
   return (
     <GlobalWrapper>
       <TodoSyncStatusBanner syncState={syncState} />
+      <Pressable
+        testID="dashboard-add-todo-button"
+        style={{ marginBottom: 26 }}
+        onPress={() => dispatch(openAddTodoModal())}
+      >
+        <PlusIcon />
+      </Pressable>
       <Pressable
         testID="dashboard-search-button"
         onPress={() => setSearchVisible(true)}

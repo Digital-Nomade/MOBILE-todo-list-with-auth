@@ -2,6 +2,7 @@ import { api } from '@/config/redux/api'
 import { signOutMiddleware } from '@/config/redux/signOutMiddleware'
 import authReducer from '@/features/auth/authFlowSlice'
 import offlineTodosReducer from '@/features/todos/offline/offlineSlice'
+import uiReducer from '@/features/ui/modalSlice'
 import { clearCachedUser } from '@/features/auth/userCacheStorage'
 import { AuthPayload } from '@/features/auth/authTypes'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
@@ -12,6 +13,7 @@ export function createTestStore() {
     reducer: combineReducers({
       auth: authReducer,
       offlineTodos: offlineTodosReducer,
+      ui: uiReducer,
       [api.reducerPath]: api.reducer,
     }),
     middleware: (getDefaultMiddleware) =>

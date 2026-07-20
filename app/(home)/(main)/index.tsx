@@ -2,12 +2,15 @@ import { TodoNavigator } from "@/components/features/Home/TodoNavigator/TodoNavi
 import { NotificationIcon } from "@/components/icons/NotificationIcon";
 import { PlusIcon } from "@/components/icons/PlusIcon";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
+import { useAppDispatch } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
+import { openAddTodoModal } from "@/features/ui/modalSlice";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 export default function HomeScreen() {
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
   return (
     <GlobalWrapper>
@@ -31,7 +34,7 @@ export default function HomeScreen() {
       <Pressable
         testID="add-todo-button"
         style={{ marginBottom: 26 }}
-        onPress={() => router.push('/addTodoModal')}
+        onPress={() => dispatch(openAddTodoModal())}
       >
         <PlusIcon />
       </Pressable>
