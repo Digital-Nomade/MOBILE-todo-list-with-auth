@@ -6,6 +6,8 @@ export interface VerificationFlowSnapshot {
   email: string
   message: string
   resendAvailableAt: number | null
+  /** When true, check-email sends a code once on entry (login redirect). */
+  requestCodeOnEntry?: boolean
 }
 
 let memorySnapshot: VerificationFlowSnapshot | null = null
@@ -57,6 +59,7 @@ export function loadVerificationFlow(): VerificationFlowSnapshot | null {
       message: typeof parsed.message === 'string' ? parsed.message : '',
       resendAvailableAt:
         typeof parsed.resendAvailableAt === 'number' ? parsed.resendAvailableAt : null,
+      requestCodeOnEntry: parsed.requestCodeOnEntry === true,
     }
   } catch {
     return memorySnapshot

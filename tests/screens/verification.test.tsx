@@ -10,13 +10,22 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 const mockDispatch = jest.fn()
 const mockVerifyEmail = jest.fn()
 const mockResendVerification = jest.fn()
+const mockLogin = jest.fn()
 const mockReplace = jest.fn()
 let mockVerifyLoading = false
 let mockAuthState: {
-  user: { email: string } | null
+  user: {
+    email: string
+    status: 'ACTIVE' | 'PENDING_VERIFICATION'
+  } | null
+  signupEmail: string
+  signupPassword: string
   verificationEmail: string
   verificationMessage: string
   verificationResendAvailableAt: number | null
+}
+let mockSession = {
+  isAuthenticated: false,
 }
 
 jest.mock('@/config/redux/hooks', () => ({
@@ -25,12 +34,17 @@ jest.mock('@/config/redux/hooks', () => ({
     selector({ auth: mockAuthState }),
 }))
 
+jest.mock('@/hooks/useSession', () => ({
+  useSession: () => mockSession,
+}))
+
 jest.mock('@/features/auth/authApi', () => ({
   useVerifyEmailMutation: () => [mockVerifyEmail, { isLoading: mockVerifyLoading }],
   useResendVerificationMutation: () => [
     mockResendVerification,
     { isLoading: false },
   ],
+  useLoginMutation: () => [mockLogin],
 }))
 
 jest.mock('expo-router', () => ({
@@ -50,8 +64,11 @@ describe('confirmation-code screen', () => {
     jest.clearAllMocks()
     clearStoredVerificationFlow()
     mockVerifyLoading = false
+    mockSession = { isAuthenticated: false }
     mockAuthState = {
       user: null,
+      signupEmail: '',
+      signupPassword: '',
       verificationEmail: 'user@example.com',
       verificationMessage: 'Enter the code sent to your email.',
       verificationResendAvailableAt: null,
@@ -59,10 +76,98 @@ describe('confirmation-code screen', () => {
     mockVerifyEmail.mockReturnValue({
       unwrap: jest.fn().mockResolvedValue(verifiedUser),
     })
+    mockLogin.mockReturnValue({
+      unwrap: jest.fn().mockResolvedValue({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        expiresIn: 900,
+        user: verifiedUser,
+      }),
+    })
     mockResendVerification.mockReturnValue({
       unwrap: jest.fn().mockResolvedValue({
         message: 'If eligible, a new confirmation code has been sent.',
       }),
+    })
+  })
+
+  it('automatically sends a code when opened from login redirect', async () => {
+    saveVerificationFlow({
+      email: 'user@example.com',
+      message: 'Confirm your email to sign in.',
+      resendAvailableAt: null,
+      requestCodeOnEntry: true,
+    })
+    mockAuthState.verificationEmail = ''
+    mockAuthState.verificationMessage = ''
+
+    render(<CheckEmailScreen />)
+
+    await waitFor(() => {
+      expect(mockResendVerification).toHaveBeenCalledWith({
+        email: 'user@example.com',
+      })
+    })
+    expect(
+      await screen.findByText('If eligible, a new confirmation code has been sent.')
+    ).toBeTruthy()
+  })
+
+  it('automatically sends a code for authenticated pending users', async () => {
+    mockSession = { isAuthenticated: true }
+    mockAuthState.user = {
+      email: 'user@example.com',
+      status: 'PENDING_VERIFICATION',
+    }
+
+    render(<CheckEmailScreen />)
+
+    await waitFor(() => {
+      expect(mockResendVerification).toHaveBeenCalledWith({
+        email: 'user@example.com',
+      })
+    })
+  })
+
+  it('does not automatically send a code after signup registration', async () => {
+    render(<CheckEmailScreen />)
+
+    await waitFor(() => {
+      expect(mockResendVerification).not.toHaveBeenCalled()
+    })
+  })
+
+  it('routes authenticated pending users to home after verification', async () => {
+    mockSession = { isAuthenticated: true }
+    mockAuthState.user = {
+      email: 'user@example.com',
+      status: 'PENDING_VERIFICATION',
+    }
+
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '001234')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/(home)')
+    })
+    expect(screen.queryByText(/Your email has been confirmed/)).toBeNull()
+  })
+
+  it('auto-logs in after signup verification when credentials are available', async () => {
+    mockAuthState.signupEmail = 'user@example.com'
+    mockAuthState.signupPassword = 'secret-password'
+
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '001234')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith({
+        identifier: 'user@example.com',
+        password: 'secret-password',
+      })
+      expect(mockReplace).toHaveBeenCalledWith('/(home)')
     })
   })
 
@@ -86,6 +191,16 @@ describe('confirmation-code screen', () => {
 
     fireEvent.press(screen.getByText('go to login'))
     expect(mockReplace).toHaveBeenCalledWith('/(auth)')
+  })
+
+  it('shows manual login success when no session or credentials are available', async () => {
+    render(<CheckEmailScreen />)
+    fireEvent.changeText(screen.getByTestId('verification-code-input'), '001234')
+    fireEvent.press(screen.getByText('confirm code'))
+
+    expect(await screen.findByText(/Your email has been confirmed/)).toBeTruthy()
+    expect(mockReplace).not.toHaveBeenCalledWith('/(home)')
+    expect(mockLogin).not.toHaveBeenCalled()
   })
 
   it('validates that the code contains exactly six digits', async () => {
@@ -183,6 +298,7 @@ describe('confirmation-code screen', () => {
       email: 'user@example.com',
       message: 'If eligible, a new confirmation code has been sent.',
       resendAvailableAt: expect.any(Number),
+      requestCodeOnEntry: false,
     })
     expect(savedSnapshot).not.toHaveProperty('code')
 

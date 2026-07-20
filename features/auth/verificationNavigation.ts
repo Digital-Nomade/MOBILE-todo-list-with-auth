@@ -28,6 +28,7 @@ export function beginEmailVerificationFlow({
     email: normalizedEmail,
     message,
     resendAvailableAt: null as number | null,
+    requestCodeOnEntry: true,
   }
 
   saveVerificationFlow(snapshot)

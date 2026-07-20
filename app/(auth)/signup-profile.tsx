@@ -4,7 +4,7 @@ import { getErrorCode, getUserFacingMessage } from "@/config/graphql/errors";
 import { useAppDispatch, useAppSelector } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
 import { useCreateUserMutation } from "@/features/auth/authApi";
-import { resetAuthState, setVerificationFlow } from "@/features/auth/authFlowSlice";
+import { setVerificationFlow } from "@/features/auth/authFlowSlice";
 import {
   normalizeVerificationEmail,
   saveVerificationFlow,
@@ -70,7 +70,6 @@ export default function SignUpProfileScreen() {
       const verificationFlow = { email, message, resendAvailableAt: null }
       saveVerificationFlow(verificationFlow)
       dispatch(setVerificationFlow(verificationFlow))
-      dispatch(resetAuthState())
       router.replace('/(auth)/check-email')
     } catch (error) {
       setServerError(getUserFacingMessage(error))

@@ -55,6 +55,12 @@ export const authSlice = createSlice({
       state.expiresIn = payload.expiresIn
       state.user = payload.user
     },
+    setOfflineSession: (state, { payload }: PayloadAction<AuthUserSnapshot>) => {
+      state.sessionStatus = 'offline-authenticated'
+      state.accessToken = null
+      state.expiresIn = null
+      state.user = payload
+    },
     setUserSnapshot: (state, { payload }: PayloadAction<AuthUserSnapshot>) => {
       state.user = payload
     },
@@ -80,6 +86,7 @@ export const {
   setVerificationResendAvailableAt,
   clearVerificationFlow,
   setCredentials,
+  setOfflineSession,
   setUserSnapshot,
   sessionRestorationFinished,
   signOut,

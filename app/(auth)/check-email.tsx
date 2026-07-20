@@ -4,9 +4,12 @@ import { getErrorCode, getUserFacingMessage } from "@/config/graphql/errors";
 import { useAppDispatch, useAppSelector } from "@/config/redux/hooks";
 import { StylesGuide } from "@/constants/StyleGuide";
 import {
+  useLoginMutation,
   useResendVerificationMutation,
   useVerifyEmailMutation,
 } from "@/features/auth/authApi";
+import { completeEmailVerification } from "@/features/auth/verificationCompletion";
+import { useSession } from "@/hooks/useSession";
 import {
   clearVerificationFlow,
   setVerificationFlow,
@@ -41,8 +44,11 @@ function maskEmail(email: string): string {
 export default function CheckEmailScreen() {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { isAuthenticated } = useSession()
   const {
     user,
+    signupEmail,
+    signupPassword,
     verificationEmail,
     verificationMessage,
     verificationResendAvailableAt,
@@ -64,6 +70,9 @@ export default function CheckEmailScreen() {
   const [now, setNow] = useState(Date.now())
   const [verifyEmail, { isLoading: isVerifying }] = useVerifyEmailMutation()
   const [resendVerification, { isLoading: isResending }] = useResendVerificationMutation()
+  const [login] = useLoginMutation()
+
+  const autoSendStarted = useRef(false)
 
   useEffect(() => {
     if (!verificationEmail && storedFlow?.email) {
@@ -89,15 +98,91 @@ export default function CheckEmailScreen() {
     setFeedback(null)
   }
 
-  function retainFlow(nextEmail: string, message: string, cooldown: number | null) {
+  function retainFlow(
+    nextEmail: string,
+    message: string,
+    cooldown: number | null,
+    options: { requestCodeOnEntry?: boolean } = {},
+  ) {
     const snapshot = {
       email: nextEmail,
       message,
       resendAvailableAt: cooldown,
+      requestCodeOnEntry: options.requestCodeOnEntry,
     }
     saveVerificationFlow(snapshot)
     dispatch(setVerificationFlow(snapshot))
   }
+
+  async function sendVerificationCode(
+    invalidatePrevious = false,
+    emailOverride?: string,
+  ): Promise<boolean> {
+    const targetEmail = normalizeVerificationEmail(emailOverride ?? email)
+
+    if (!EMAIL_PATTERN.test(targetEmail)) {
+      setFeedback('Enter a valid email address to request a new code.')
+      return false
+    }
+
+    try {
+      const response = await resendVerification({ email: targetEmail }).unwrap()
+      const nextResendAvailableAt = Date.now() + RESEND_COOLDOWN_MS
+      setEmail(targetEmail)
+      setCode('')
+      setFeedback(response.message)
+      setPreviousCodeInvalidated(invalidatePrevious)
+      setResendAvailableAt(nextResendAvailableAt)
+      dispatch(setVerificationResendAvailableAt(nextResendAvailableAt))
+      retainFlow(targetEmail, response.message, nextResendAvailableAt, {
+        requestCodeOnEntry: false,
+      })
+      return true
+    } catch (error) {
+      setFeedback(getUserFacingMessage(error))
+      return false
+    }
+  }
+
+  useEffect(() => {
+    if (autoSendStarted.current || success) {
+      return
+    }
+
+    const emailToUse = normalizeVerificationEmail(
+      verificationEmail || user?.email || storedFlow?.email || email,
+    )
+
+    if (!EMAIL_PATTERN.test(emailToUse)) {
+      return
+    }
+
+    const cooldownActive =
+      (resendAvailableAt ?? storedFlow?.resendAvailableAt ?? 0) > Date.now()
+
+    if (cooldownActive) {
+      return
+    }
+
+    const shouldAutoSend =
+      storedFlow?.requestCodeOnEntry === true ||
+      (isAuthenticated && user?.status === 'PENDING_VERIFICATION')
+
+    if (!shouldAutoSend) {
+      return
+    }
+
+    autoSendStarted.current = true
+
+    if (storedFlow?.requestCodeOnEntry) {
+      retainFlow(emailToUse, initialMessage, resendAvailableAt, {
+        requestCodeOnEntry: false,
+      })
+    }
+
+    void sendVerificationCode(false, emailToUse)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function onVerify() {
     if (!EMAIL_PATTERN.test(normalizedEmail)) {
@@ -112,8 +197,10 @@ export default function CheckEmailScreen() {
 
     setFeedback(null)
 
+    let verifiedUser
+
     try {
-      await verifyEmail({ email: normalizedEmail, code }).unwrap()
+      verifiedUser = await verifyEmail({ email: normalizedEmail, code }).unwrap()
     } catch (error) {
       const errorCode = getErrorCode(error)
 
@@ -130,36 +217,31 @@ export default function CheckEmailScreen() {
       return
     }
 
-    clearStoredVerificationFlow()
-    dispatch(clearVerificationFlow())
+    const pendingCredentials =
+      signupEmail && signupPassword
+        ? { email: signupEmail, password: signupPassword }
+        : null
+
+    const result = await completeEmailVerification({
+      dispatch,
+      router,
+      verifiedUser,
+      isAuthenticated,
+      currentUser: user,
+      pendingCredentials,
+      login,
+    })
+
+    if (result === 'home') {
+      return
+    }
+
     setCode('')
     setSuccess(true)
   }
 
   async function onResend() {
-    if (!EMAIL_PATTERN.test(normalizedEmail)) {
-      setFeedback('Enter a valid email address to request a new code.')
-      return
-    }
-
-    let message: string
-
-    try {
-      const response = await resendVerification({ email: normalizedEmail }).unwrap()
-      message = response.message
-    } catch (error) {
-      setFeedback(getUserFacingMessage(error))
-      return
-    }
-
-    const nextResendAvailableAt = Date.now() + RESEND_COOLDOWN_MS
-    setEmail(normalizedEmail)
-    setCode('')
-    setFeedback(message)
-    setPreviousCodeInvalidated(true)
-    setResendAvailableAt(nextResendAvailableAt)
-    dispatch(setVerificationResendAvailableAt(nextResendAvailableAt))
-    retainFlow(normalizedEmail, message, nextResendAvailableAt)
+    await sendVerificationCode(true)
   }
 
   function changeEmail() {

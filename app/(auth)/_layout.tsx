@@ -13,6 +13,10 @@ export default function AuthLayout() {
     return <Redirect href="/(auth)/check-email" />
   }
 
+  if (isAuthenticated && user?.status === 'SUSPENDED') {
+    return <Redirect href="/(auth)/account-unavailable" />
+  }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen

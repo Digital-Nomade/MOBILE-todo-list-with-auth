@@ -103,6 +103,13 @@ describe('LoginScreen', () => {
       expect(mockReplace).toHaveBeenCalledWith('/(auth)/check-email')
     })
 
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'auth/persistLoginDataForSignUp',
+      payload: {
+        email: 'pending-user@example.com',
+        password: 'secret-password',
+      },
+    })
     expect(screen.queryByText('This account is not available. Verify your email or contact support.')).toBeNull()
   })
 

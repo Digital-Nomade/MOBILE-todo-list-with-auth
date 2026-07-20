@@ -12,13 +12,13 @@ import {
   LOGIN_MUTATION,
   LOGOUT_ALL_MUTATION,
   LOGOUT_MUTATION,
-  REFRESH_TOKEN_MUTATION,
   REQUEST_PASSWORD_RESET_MUTATION,
   RESEND_VERIFICATION_MUTATION,
   RESET_PASSWORD_MUTATION,
   VERIFY_EMAIL_MUTATION,
 } from "./documents";
 import { applyAuthPayload, clearSession } from "./session";
+import { refreshSessionOnce } from "./refreshSession";
 import { getRefreshToken } from "./tokenStorage";
 
 export const authApi = api.injectEndpoints({
@@ -55,31 +55,25 @@ export const authApi = api.injectEndpoints({
      * helpers used by the reauth middleware.
      */
     restoreSession: build.mutation<AuthPayload, void>({
-      async queryFn(_, __, ___, baseQuery) {
-        const refreshToken = await getRefreshToken()
+      async queryFn(_, { dispatch, getState }) {
+        const result = await refreshSessionOnce(dispatch, getState)
 
-        if (!refreshToken) {
-          return { error: { code: 'UNAUTHENTICATED' as const, message: 'No stored session.' } }
+        if (result.status === 'success') {
+          return { data: result.payload }
         }
 
-        const result = await baseQuery({
-          document: REFRESH_TOKEN_MUTATION,
-          variables: { input: { refreshToken } },
-          anonymous: true,
-        })
-
-        if (result.error) {
-          return { error: result.error }
-        }
-
-        return { data: (result.data as { refreshToken: AuthPayload }).refreshToken }
-      },
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled
-          await applyAuthPayload(dispatch, data)
-        } catch {
+        if (result.status === 'invalid') {
           await clearSession(dispatch)
+          return {
+            error: { code: 'UNAUTHENTICATED' as const, message: 'Session expired.' },
+          }
+        }
+
+        return {
+          error: {
+            code: 'NETWORK_ERROR' as const,
+            message: 'Unable to reach the server. Check your connection and try again.',
+          },
         }
       },
     }),

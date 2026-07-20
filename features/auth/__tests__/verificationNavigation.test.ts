@@ -39,6 +39,7 @@ describe('verificationNavigation', () => {
     expect(loadVerificationFlow()).toMatchObject({
       email: 'user@example.com',
       message: 'Confirm your email.',
+      requestCodeOnEntry: true,
     })
     expect(mockReplace).toHaveBeenCalledWith('/(auth)/check-email')
   })

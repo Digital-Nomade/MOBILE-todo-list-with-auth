@@ -103,7 +103,7 @@ describe('SignUpProfileScreen', () => {
         resendAvailableAt: null,
       },
     })
-    expect(mockDispatch).toHaveBeenCalledWith(
+    expect(mockDispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: 'auth/resetAuthState' })
     )
     expect(loadVerificationFlow()).toEqual({

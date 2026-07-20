@@ -64,6 +64,7 @@ export default function Index() {
         const email = emailFromLoginIdentifier(data.identifier)
 
         if (email) {
+          dispatch(persistLoginDataForSignUp({ email, password: data.password }))
           beginEmailVerificationFlow({
             dispatch,
             router,

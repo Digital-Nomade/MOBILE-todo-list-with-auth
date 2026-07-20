@@ -1,6 +1,10 @@
 export type UserStatus = 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED'
 
-export type SessionStatus = 'initializing' | 'authenticated' | 'unauthenticated'
+export type SessionStatus =
+  | 'initializing'
+  | 'authenticated'
+  | 'offline-authenticated'
+  | 'unauthenticated'
 
 export interface AuthUserSnapshot {
   id: string
