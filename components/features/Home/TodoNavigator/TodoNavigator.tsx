@@ -6,12 +6,20 @@ import { TodoViewModel } from "@/types/todo-types";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { AnimatePresence, MotiView } from 'moti';
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { styles } from './TodoNavigator.styles';
 
 
 type Directions = 'next' | 'previous'
+
+function clampTodoIndex(index: number, total: number): number {
+  if (total <= 0) {
+    return 0
+  }
+
+  return Math.min(Math.max(index, 0), total - 1)
+}
 
 export function TodoNavigator() {
   const { data, isLoading, isFetching, syncState } = useOfflineTodos()
@@ -26,8 +34,17 @@ export function TodoNavigator() {
   }, [data])
 
   useEffect(() => {
+    setTodoIndex(currentIndex => clampTodoIndex(currentIndex, data?.length ?? 0))
+  }, [data?.length])
+
+  useEffect(() => {
     setLoading(isLoading || isFetching)
   }, [isLoading, isFetching])
+
+  const hasTodos = todos.length > 0
+  const hasMultipleTodos = todos.length > 1
+  const hasPrevious = hasMultipleTodos && todoIndex > 0
+  const hasNext = hasMultipleTodos && todoIndex < todos.length - 1
 
   function handleNavigateTodo(direction: Directions) {
     switch(direction) {
@@ -41,19 +58,19 @@ export function TodoNavigator() {
   }
 
   function handleNextTodo() {
-    if (todos?.length && todoIndex < (todos?.length - 1)) {
-      setTodoIndex(state => {
-        return state + 1
-      })
+    if (!hasNext) {
+      return
     }
+
+    setTodoIndex(state => clampTodoIndex(state + 1, todos.length))
   }
 
   function handlePreviousTodo() {
-    if (todos?.length && todoIndex >= 0) {
-      setTodoIndex(state => {
-        return state - 1
-      })
+    if (!hasPrevious) {
+      return
     }
+
+    setTodoIndex(state => clampTodoIndex(state - 1, todos.length))
   }
 
   function animateTransition(callback: () => void) {
@@ -73,7 +90,10 @@ export function TodoNavigator() {
     }
   }
 
-  const currentTodo: TodoViewModel | undefined = todos[todoIndex]
+  const currentTodo = useMemo(
+    () => (hasTodos ? todos[todoIndex] : undefined),
+    [hasTodos, todoIndex, todos],
+  )
 
   return (
     <Fragment>
@@ -83,7 +103,16 @@ export function TodoNavigator() {
             style={styles.activityIndicator}
             size={'large'}
           />
-        : (
+        : !hasTodos
+          ? (
+            <View style={styles.emptyStateContainer} testID="todo-navigator-empty">
+              <Text style={styles.emptyStateTitle}>No todos yet</Text>
+              <Text style={styles.emptyStateDescription}>
+                Tap the plus button above to create your first todo.
+              </Text>
+            </View>
+          )
+          : (
         <AnimatePresence>
           <MotiView
             style={styles.motionView}
@@ -97,11 +126,11 @@ export function TodoNavigator() {
             }}
           >
             <View style={styles.mainContainer}>
-                <Text style={styles.titleText}>
+                <Text style={styles.titleText} testID="todo-navigator-title">
                   {currentTodo?.title ?? ''}
                 </Text>
                 <CheckBox
-                  checked={currentTodo?.done}
+                  checked={currentTodo?.done ?? false}
                   onCheck={(isChecked) => currentTodo && handleCheckTodo(currentTodo, isChecked)}
                   color={StylesGuide.colors.success}
                 />
@@ -153,17 +182,13 @@ export function TodoNavigator() {
         </AnimatePresence>
       )}
 
-      <View
-        style={{
-          flexDirection: 'row',
-          marginTop: 'auto',
-          justifyContent: 'space-between'
-        }}
-      >
+      <View style={styles.navigationContainer}>
         <Pressable
-          style={{ opacity: todoIndex <= 0 ? 0.5 : 1 }}
+          testID="todo-navigator-previous"
+          accessibilityState={{ disabled: !hasPrevious }}
+          style={{ opacity: hasPrevious ? 1 : 0.5 }}
           onPress={() => animateTransition(() => handleNavigateTodo('previous'))}
-          disabled={todoIndex <= 0}
+          disabled={!hasPrevious}
         >
           <MaterialIcons
             name="chevron-left"
@@ -172,9 +197,11 @@ export function TodoNavigator() {
           />
         </Pressable>
         <Pressable
-          style={{ opacity: todoIndex >= (todos.length - 1) ? 0.5 : 1 }}
+          testID="todo-navigator-next"
+          accessibilityState={{ disabled: !hasNext }}
+          style={{ opacity: hasNext ? 1 : 0.5 }}
           onPress={() => animateTransition(() => handleNavigateTodo('next'))}
-          disabled={todoIndex >= (todos.length - 1)}
+          disabled={!hasNext}
         >
           <MaterialIcons
             name="chevron-right"
