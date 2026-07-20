@@ -4,7 +4,7 @@ import {
   TodoSyncState,
   TodoViewModel,
 } from '@/types/todo-types'
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { todoToViewModel } from './mappers'
 
 export interface OfflineSliceState extends TodoSyncState {
@@ -115,7 +115,24 @@ export function selectOfflineTodoById(
   return state.offlineTodos.todos.find(item => item.localId === localId || item.serverId === localId)
 }
 
-export function selectTodoSyncState(state: { offlineTodos: OfflineSliceState }): TodoSyncState {
-  const { isOnline, localOnly, pendingCount, coordinatorStatus, lastSyncAt, lastError } = state.offlineTodos
-  return { isOnline, localOnly, pendingCount, coordinatorStatus, lastSyncAt, lastError }
-}
+const selectOfflineSlice = (state: { offlineTodos: OfflineSliceState }) =>
+  state.offlineTodos
+
+export const selectTodoSyncState = createSelector(
+  [selectOfflineSlice],
+  ({
+    isOnline,
+    localOnly,
+    pendingCount,
+    coordinatorStatus,
+    lastSyncAt,
+    lastError,
+  }): TodoSyncState => ({
+    isOnline,
+    localOnly,
+    pendingCount,
+    coordinatorStatus,
+    lastSyncAt,
+    lastError,
+  }),
+)

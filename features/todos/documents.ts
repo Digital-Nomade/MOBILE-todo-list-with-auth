@@ -23,6 +23,20 @@ export const TODOS_QUERY = `
   }
 `
 
+export const SEARCH_TODOS_QUERY = `
+  query SearchTodos($term: String!, $pagination: TodoPaginationInput) {
+    searchTodos(term: $term, pagination: $pagination) {
+      data {
+        ${TODO_FIELDS}
+      }
+      first
+      last
+      limit
+      total
+    }
+  }
+`
+
 export const TODO_QUERY = `
   query Todo($id: ID!) {
     todo(id: $id) {

@@ -9,6 +9,7 @@ import {
 import {
   CREATE_TODO_MUTATION,
   DELETE_TODO_MUTATION,
+  SEARCH_TODOS_QUERY,
   TODO_QUERY,
   TODOS_QUERY,
   UPDATE_TODO_MUTATION,
@@ -33,6 +34,10 @@ function toISOString(value: Date | string | null | undefined): string | null | u
   return value instanceof Date ? value.toISOString() : value
 }
 
+export type SearchTodosArgs = {
+  term: string
+} & TodoPaginationInput
+
 export const todoApi = api.injectEndpoints({
   overrideExisting: true,
   endpoints: build => ({
@@ -52,6 +57,17 @@ export const todoApi = api.injectEndpoints({
         variables: { id },
       }),
       transformResponse: (data: { todo: Todo }) => data.todo,
+      providesTags: ['todos'],
+    }),
+    searchTodos: build.query<PaginatedTodos, SearchTodosArgs>({
+      query: ({ term, ...pagination }) => ({
+        document: SEARCH_TODOS_QUERY,
+        variables: {
+          term,
+          pagination: { ...DEFAULT_PAGINATION, ...pagination },
+        },
+      }),
+      transformResponse: (data: { searchTodos: PaginatedTodos }) => data.searchTodos,
       providesTags: ['todos'],
     }),
     createTodo: build.mutation<Todo, CreateTodoArgs>({
@@ -99,6 +115,7 @@ export const todoApi = api.injectEndpoints({
 export const {
   useFetchTodosQuery,
   useFetchTodoQuery,
+  useSearchTodosQuery,
   useCreateTodoMutation,
   useUpdateTodoMutation,
   useDeleteTodoMutation,

@@ -136,6 +136,28 @@ describe('todoApi', () => {
     subscription.unsubscribe()
   })
 
+  it('searches todos by term with pagination and the access token attached', async () => {
+    fetchMock.mockResolvedValueOnce(graphqlSuccess({
+      searchTodos: { data: [todoFixture], first: 1, last: 1, limit: 50, total: 1 },
+    }))
+
+    const result = await store.dispatch(
+      todoApi.endpoints.searchTodos.initiate({
+        term: 'fruits',
+        currentPage: 1,
+        limit: 50,
+        orderBy: 'DESC',
+      }),
+    ).unwrap()
+
+    const call = parseGraphQLCall(fetchMock.mock.calls[0])
+    expect(call.query).toContain('query SearchTodos')
+    expect(call.variables.term).toBe('fruits')
+    expect(call.variables.pagination).toEqual({ currentPage: 1, limit: 50, orderBy: 'DESC' })
+    expect(call.headers.authorization).toBe('Bearer access-1')
+    expect(result.data[0].id).toBe(TODO_ID)
+  })
+
   it('deletes todos by UUID string id', async () => {
     fetchMock.mockResolvedValueOnce(graphqlSuccess({ deleteTodo: true }))
 

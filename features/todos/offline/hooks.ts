@@ -1,4 +1,5 @@
 import { useAppDispatch, useAppSelector } from '@/config/redux/hooks'
+import { filterTodosByQuery } from '@/components/features/Dashboard/TodoSearchModal/filterTodosByQuery'
 import { useSession } from '@/hooks/useSession'
 import {
   TodoCreationPayload,
@@ -16,6 +17,7 @@ import {
   deleteTodoOfflineAware,
   getTodoById,
   refreshTodosFromServer,
+  searchServerTodos,
   updateTodoOfflineAware,
 } from './todoService'
 
@@ -25,14 +27,14 @@ export function useTodoSyncState() {
 
 export function useOfflineTodos() {
   const dispatch = useAppDispatch()
-  const { user, isAuthenticated } = useSession()
+  const { user, isAuthenticated, canUseBackend } = useSession()
   const todos = useAppSelector(selectOfflineTodos)
   const syncState = useAppSelector(selectTodoSyncState)
-  const [isLoading, setIsLoading] = useState(false)
+  const isHydrated = useAppSelector(state => state.offlineTodos.isHydrated)
   const [isFetching, setIsFetching] = useState(false)
 
   const refetch = useCallback(async () => {
-    if (!user?.id) {
+    if (!user?.id || !canUseBackend) {
       return
     }
 
@@ -42,31 +44,11 @@ export function useOfflineTodos() {
     } finally {
       setIsFetching(false)
     }
-  }, [dispatch, user?.id])
-
-  useEffect(() => {
-    if (!isAuthenticated || !user?.id) {
-      return
-    }
-
-    let cancelled = false
-    setIsLoading(true)
-
-    refreshTodosFromServer(dispatch, user.id)
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [dispatch, isAuthenticated, user?.id])
+  }, [canUseBackend, dispatch, user?.id])
 
   return {
     data: todos,
-    isLoading,
+    isLoading: isAuthenticated && Boolean(user?.id) && !isHydrated,
     isFetching,
     refetch,
     syncState,
@@ -150,4 +132,56 @@ export function useOfflineTodoMutations() {
   }, [dispatch, user?.id])
 
   return useMemo(() => ({ createTodo, updateTodo, deleteTodo }), [createTodo, updateTodo, deleteTodo])
+}
+
+export function useTodoSearch(term: string) {
+  const dispatch = useAppDispatch()
+  const { canUseBackend } = useSession()
+  const localTodos = useAppSelector(selectOfflineTodos)
+  const { localOnly, isOnline } = useAppSelector(selectTodoSyncState)
+  const [results, setResults] = useState<TodoViewModel[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  const normalizedTerm = term.trim()
+  const isLocalSearch = localOnly || !canUseBackend || !isOnline
+
+  useEffect(() => {
+    if (!normalizedTerm) {
+      setResults([])
+      setIsSearching(false)
+      return
+    }
+
+    if (isLocalSearch) {
+      setResults(filterTodosByQuery(localTodos, normalizedTerm))
+      setIsSearching(false)
+      return
+    }
+
+    let cancelled = false
+    setIsSearching(true)
+
+    searchServerTodos(dispatch, normalizedTerm)
+      .then(found => {
+        if (!cancelled) {
+          setResults(found)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setResults([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsSearching(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [dispatch, isLocalSearch, localTodos, normalizedTerm])
+
+  return { results, isSearching, isLocalSearch }
 }

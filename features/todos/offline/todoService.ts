@@ -74,6 +74,35 @@ function publishStore(dispatch: AppDispatch, store: UserOfflineStore): void {
   }))
 }
 
+export async function searchServerTodos(
+  dispatch: AppDispatch,
+  term: string,
+): Promise<TodoViewModel[]> {
+  const normalized = term.trim()
+
+  if (!normalized) {
+    return []
+  }
+
+  try {
+    const page = await dispatch(
+      todoApi.endpoints.searchTodos.initiate({
+        term: normalized,
+        ...DEFAULT_PAGINATION,
+        limit: 50,
+      }),
+    ).unwrap()
+
+    return page.data.map(todo => todoToViewModel(serverTodoToLocalRecord(todo)))
+  } catch (error) {
+    if (getErrorCode(error) === 'NETWORK_ERROR') {
+      return []
+    }
+
+    throw error
+  }
+}
+
 export async function refreshTodosFromServer(
   dispatch: AppDispatch,
   userId: string
