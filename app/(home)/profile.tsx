@@ -1,4 +1,5 @@
 import { Button, DatePicker, Input, Switch } from "@/components/atoms";
+import { ChangePasswordModal } from "@/components/features/ChangePasswordModal/ChangePasswordModal";
 import { GlobalWrapper } from "@/components/templates/GlobalTemplate";
 import { getUserFacingMessage } from "@/config/graphql/errors";
 import { useAppDispatch } from "@/config/redux/hooks";
@@ -10,7 +11,6 @@ import {
   enableLocalOnlyMode,
 } from "@/features/todos/offline/todoService";
 import { useMeQuery, useUpdateProfileMutation } from "@/features/user/userApi";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
@@ -23,7 +23,6 @@ interface ProfileInputs {
 }
 
 export default function Profile() {
-  const router = useRouter()
   const dispatch = useAppDispatch()
   const syncState = useTodoSyncState()
   const { data: profile, isLoading: isLoadingProfile, error: profileError } = useMeQuery()
@@ -32,12 +31,14 @@ export default function Profile() {
   const [logoutAll, { isLoading: isLoggingOutAll }] = useLogoutAllMutation()
   const [feedback, setFeedback] = useState<string | null>(null)
   const [localOnlyLoading, setLocalOnlyLoading] = useState(false)
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false)
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: {
       errors,
       isDirty,
@@ -46,12 +47,14 @@ export default function Profile() {
 
   useEffect(() => {
     if (profile) {
-      setValue('name', profile.name)
-      setValue('lastName', profile.lastName)
-      setValue('birthdate', new Date(profile.birthdate))
-      setValue('profilePicture', profile.profilePicture ?? '')
+      reset({
+        name: profile.name,
+        lastName: profile.lastName,
+        birthdate: new Date(profile.birthdate),
+        profilePicture: profile.profilePicture ?? '',
+      })
     }
-  }, [profile])
+  }, [profile, reset])
 
   // Email and username are shown read-only and are never sent in the
   // mutation: the backend rejects changes to those fields.
@@ -59,12 +62,19 @@ export default function Profile() {
     setFeedback(null)
 
     try {
-      await updateProfile({
+      const updated = await updateProfile({
         name: data.name,
         lastName: data.lastName,
         birthdate: data.birthdate.toISOString(),
         profilePicture: data.profilePicture || undefined,
       }).unwrap()
+
+      reset({
+        name: updated.name,
+        lastName: updated.lastName,
+        birthdate: new Date(updated.birthdate),
+        profilePicture: updated.profilePicture ?? '',
+      })
 
       setFeedback('Profile updated.')
     } catch (error) {
@@ -308,7 +318,7 @@ export default function Profile() {
             testID="profile-change-password-button"
             buttonType="secondary"
             variant="outlined"
-            onPress={() => router.navigate('/(home)/change-password')}
+            onPress={() => setChangePasswordVisible(true)}
           >
             Change password
           </Button>
@@ -336,6 +346,10 @@ export default function Profile() {
           Logout from all devices
         </Button>
       </ScrollView>
+      <ChangePasswordModal
+        visible={changePasswordVisible}
+        onClose={() => setChangePasswordVisible(false)}
+      />
     </GlobalWrapper>
   )
 }

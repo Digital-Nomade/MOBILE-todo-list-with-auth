@@ -1,9 +1,10 @@
 import { CalendarIcon } from '@/components/icons/CalendarIcon';
 import { StylesGuide } from '@/constants/StyleGuide';
 import { format } from 'date-fns';
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+
 interface Props {
   testID?: string
   onChange: (value: Date) => void
@@ -13,6 +14,19 @@ interface Props {
   mode: 'date' | 'datetime' | 'time',
   backgroundColor?: string
   Icon?: ReactNode
+}
+
+function formatLabel(date: Date, mode: Props['mode']): string {
+  switch (mode) {
+    case 'date':
+      return format(date, 'd, MMM yyyy')
+    case 'datetime':
+      return format(date, 'hh:mm d, MMM yyyy')
+    case 'time':
+      return format(date, 'hh:mm aaaa')
+    default:
+      throw new Error(`${mode}`)
+  }
 }
 
 export function DatePicker({
@@ -25,25 +39,21 @@ export function DatePicker({
   backgroundColor = StylesGuide.colors.dangerLight,
   Icon,
 }: Props) {
-  const [date, setDate] = useState(value)
+  const [selectedDate, setSelectedDate] = useState(value ?? new Date())
   const [show, setShow] = useState(false)
 
-  function handleLabelFormat() {
-    switch(mode) {
-      case 'date':
-        return format(new Date, 'd, MMM yyyy')
-      case 'datetime':
-        return format(new Date(), 'hh:mm d, MMM yyyy')
-      case 'time':
-        return format(new Date(), 'hh:mm aaaa')
-      default:
-        throw new Error(`${mode}`)
+  useEffect(() => {
+    if (value) {
+      setSelectedDate(value)
     }
-  }
+  }, [value])
 
-  function handleDateConfirm(selectedDate: Date) {
-    setDate(new Date(selectedDate))
-    onChange(new Date(selectedDate))
+  const displayDate = value ?? selectedDate
+
+  function handleDateConfirm(nextDate: Date) {
+    const confirmed = new Date(nextDate)
+    setSelectedDate(confirmed)
+    onChange(confirmed)
     setShow(false)
   }
 
@@ -69,19 +79,18 @@ export function DatePicker({
             borderRadius: 8
           }}
         >
-          {handleLabelFormat()}
+          {formatLabel(displayDate, mode)}
         </Text>
       </Pressable>
       <DateTimePickerModal
         isVisible={show}
         mode={mode}
+        date={displayDate}
         onConfirm={handleDateConfirm}
-        onCancel={() => setShow(state => !state)}
+        onCancel={() => setShow(false)}
         minimumDate={minimumDate}
         maximumDate={maxDate}
       />
     </View>
   )
 }
-
-

@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 const mockUpdateProfile = jest.fn()
 const mockLogout = jest.fn()
 const mockLogoutAll = jest.fn()
-const mockNavigate = jest.fn()
+const mockChangePassword = jest.fn()
 let mockMeResult: {
   data?: typeof profile
   isLoading: boolean
@@ -55,15 +55,15 @@ jest.mock('@/features/user/userApi', () => ({
     mockUpdateProfile,
     { isLoading: false },
   ],
+  useChangePasswordMutation: () => [
+    mockChangePassword,
+    { isLoading: false },
+  ],
 }))
 
 jest.mock('@/features/auth/authApi', () => ({
   useLogoutMutation: () => [mockLogout, { isLoading: false }],
   useLogoutAllMutation: () => [mockLogoutAll, { isLoading: false }],
-}))
-
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ navigate: mockNavigate }),
 }))
 
 jest.mock('@/components/atoms', () => {
@@ -92,6 +92,12 @@ describe('ProfileScreen', () => {
     })
     mockLogout.mockResolvedValue({ data: { message: 'Logged out.' } })
     mockLogoutAll.mockResolvedValue({ data: { message: 'Logged out.' } })
+    mockChangePassword.mockReturnValue({
+      unwrap: jest.fn().mockResolvedValue({
+        id: profile.id,
+        updatedAt: profile.updatedAt,
+      }),
+    })
     mockEnableLocalOnlyMode.mockResolvedValue({ localOnly: true })
     mockDisableLocalOnlyMode.mockResolvedValue({ localOnly: false })
   })
@@ -136,12 +142,17 @@ describe('ProfileScreen', () => {
     expect(await screen.findByText('Profile updated.')).toBeTruthy()
   })
 
-  it('opens the change-password screen', async () => {
+  it('opens and closes the change-password modal', async () => {
     render(<ProfileScreen />)
     await screen.findByDisplayValue('Ada')
 
     fireEvent.press(screen.getByText('Change password'))
-    expect(mockNavigate).toHaveBeenCalledWith('/(home)/change-password')
+    expect(screen.getByTestId('change-password-modal')).toBeTruthy()
+
+    fireEvent.press(screen.getByText('cancel'))
+    await waitFor(() => {
+      expect(screen.queryByTestId('change-password-modal')).toBeNull()
+    })
   })
 
   it('triggers logout and logout-all from their respective actions', async () => {

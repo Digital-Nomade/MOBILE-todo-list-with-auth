@@ -1,6 +1,6 @@
 import ForgotPasswordScreen from '@/app/(auth)/forgot-password'
 import ResetPasswordScreen from '@/app/(auth)/reset-password'
-import ChangePasswordScreen from '@/app/(home)/change-password'
+import { ChangePasswordModal } from '@/components/features/ChangePasswordModal/ChangePasswordModal'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native'
 
 const mockRequestPasswordReset = jest.fn()
@@ -123,7 +123,7 @@ describe('password lifecycle screens', () => {
     })
   })
 
-  describe('ChangePasswordScreen', () => {
+  describe('ChangePasswordModal', () => {
     it('sends current and new passwords', async () => {
       mockChangePassword.mockReturnValue({
         unwrap: jest.fn().mockResolvedValue({
@@ -132,7 +132,7 @@ describe('password lifecycle screens', () => {
         }),
       })
 
-      render(<ChangePasswordScreen />)
+      render(<ChangePasswordModal visible onClose={jest.fn()} />)
 
       fireEvent.changeText(
         screen.getByPlaceholderText('current password'),
@@ -161,7 +161,7 @@ describe('password lifecycle screens', () => {
         }),
       })
 
-      render(<ChangePasswordScreen />)
+      render(<ChangePasswordModal visible onClose={jest.fn()} />)
 
       fireEvent.changeText(
         screen.getByPlaceholderText('current password'),
