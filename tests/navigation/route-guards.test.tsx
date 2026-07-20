@@ -5,6 +5,8 @@ import { render, screen } from '@testing-library/react-native'
 let mockSession: {
   isInitializing: boolean
   isAuthenticated: boolean
+  canUseBackend: boolean
+  isOfflineAuthenticated: boolean
   user: {
     id: string
     status: 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED'
@@ -50,6 +52,8 @@ describe('route guards', () => {
     mockSession = {
       isInitializing: false,
       isAuthenticated: false,
+      canUseBackend: false,
+      isOfflineAuthenticated: false,
       user: null,
     }
   })
@@ -75,6 +79,8 @@ describe('route guards', () => {
     mockSession = {
       isInitializing: false,
       isAuthenticated: true,
+      canUseBackend: true,
+      isOfflineAuthenticated: false,
       user: {
         id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
         status: 'ACTIVE',
@@ -90,6 +96,8 @@ describe('route guards', () => {
     mockSession = {
       isInitializing: false,
       isAuthenticated: true,
+      canUseBackend: true,
+      isOfflineAuthenticated: false,
       user: {
         id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
         status: 'PENDING_VERIFICATION',
@@ -105,6 +113,8 @@ describe('route guards', () => {
     mockSession = {
       isInitializing: false,
       isAuthenticated: true,
+      canUseBackend: true,
+      isOfflineAuthenticated: false,
       user: {
         id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
         status: 'PENDING_VERIFICATION',
@@ -120,6 +130,8 @@ describe('route guards', () => {
     mockSession = {
       isInitializing: false,
       isAuthenticated: true,
+      canUseBackend: true,
+      isOfflineAuthenticated: false,
       user: {
         id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
         status: 'SUSPENDED',
@@ -133,10 +145,29 @@ describe('route guards', () => {
     ).toBeTruthy()
   })
 
+  it('renders protected tabs for offline authenticated users', () => {
+    mockSession = {
+      isInitializing: false,
+      isAuthenticated: true,
+      canUseBackend: false,
+      isOfflineAuthenticated: true,
+      user: {
+        id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
+        status: 'ACTIVE',
+      },
+    }
+
+    render(<HomeLayout />)
+
+    expect(screen.getByText('home-tabs')).toBeTruthy()
+  })
+
   it('renders protected tabs for active users', () => {
     mockSession = {
       isInitializing: false,
       isAuthenticated: true,
+      canUseBackend: true,
+      isOfflineAuthenticated: false,
       user: {
         id: '8eb8fb9f-7866-4a1f-bc89-cab91b3fa6d2',
         status: 'ACTIVE',

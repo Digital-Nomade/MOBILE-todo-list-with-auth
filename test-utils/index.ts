@@ -1,6 +1,8 @@
 import { api } from '@/config/redux/api'
+import { signOutMiddleware } from '@/config/redux/signOutMiddleware'
 import authReducer from '@/features/auth/authFlowSlice'
 import offlineTodosReducer from '@/features/todos/offline/offlineSlice'
+import { clearCachedUser } from '@/features/auth/userCacheStorage'
 import { AuthPayload } from '@/features/auth/authTypes'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import * as SecureStore from 'expo-secure-store'
@@ -13,7 +15,7 @@ export function createTestStore() {
       [api.reducerPath]: api.reducer,
     }),
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(api.middleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(api.middleware, signOutMiddleware),
     // microtask batching instead of requestAnimationFrame: rAF timers would
     // fire after the jest environment is torn down
     enhancers: (getDefaultEnhancers) => getDefaultEnhancers({ autoBatch: { type: 'tick' } }),
@@ -87,6 +89,7 @@ export async function storedRefreshToken(): Promise<string | null> {
 
 export async function clearStoredTokens(): Promise<void> {
   await SecureStore.deleteItemAsync('auth.refreshToken')
+  await clearCachedUser()
 }
 
 export function authPayloadFixture(overrides: Partial<{

@@ -1,7 +1,7 @@
 import { setCredentials, signOut } from './authFlowSlice'
-import { api } from '@/config/redux/api'
 import { AuthPayload } from './authTypes'
 import { clearRefreshToken, saveRefreshToken } from './tokenStorage'
+import { clearCachedUser, saveCachedUser } from './userCacheStorage'
 
 type Dispatch = (action: unknown) => unknown
 
@@ -13,6 +13,7 @@ type Dispatch = (action: unknown) => unknown
  */
 export async function applyAuthPayload(dispatch: Dispatch, payload: AuthPayload): Promise<void> {
   await saveRefreshToken(payload.refreshToken)
+  await saveCachedUser(payload.user)
   dispatch(setCredentials(payload))
 }
 
@@ -23,8 +24,8 @@ export async function applyAuthPayload(dispatch: Dispatch, payload: AuthPayload)
 export async function clearSession(dispatch: Dispatch): Promise<void> {
   try {
     await clearRefreshToken()
+    await clearCachedUser()
   } finally {
-    dispatch(api.util.resetApiState())
     dispatch(signOut())
   }
 }

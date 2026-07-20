@@ -12,6 +12,7 @@ import {
   REHYDRATE
 } from 'redux-persist'
 import { api } from './api'
+import { signOutMiddleware } from './signOutMiddleware'
 
 const persistConfig = {
   key: 'root',
@@ -41,7 +42,7 @@ export const store = configureStore({
         REGISTER,
       ],
     }
-  }).concat([api.middleware]),
+  }).concat([api.middleware, signOutMiddleware]),
   devTools: process.env.NODE_ENV !== 'production'
 })
 

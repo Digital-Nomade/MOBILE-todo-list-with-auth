@@ -1,8 +1,9 @@
-import { useAppDispatch, useAppSelector } from '@/config/redux/hooks';
-import { useRestoreSessionMutation } from '@/features/auth/authApi';
-import { sessionRestorationFinished } from '@/features/auth/authFlowSlice';
-import { getRefreshToken } from '@/features/auth/tokenStorage';
-import { useEffect, type PropsWithChildren } from 'react';
+import { useAppDispatch, useAppSelector } from '@/config/redux/hooks'
+import { store } from '@/config/redux/store'
+import { reconnectOfflineSession } from '@/features/auth/sessionBootstrap'
+import NetInfo from '@react-native-community/netinfo'
+import { useEffect, useRef, type PropsWithChildren } from 'react'
+import { bootstrapSession } from '@/features/auth/sessionBootstrap'
 
 /**
  * Read-only view of the auth session. Components never touch tokens directly;
@@ -11,9 +12,14 @@ import { useEffect, type PropsWithChildren } from 'react';
 export function useSession() {
   const { sessionStatus, user } = useAppSelector(state => state.auth)
 
+  const isAuthenticated =
+    sessionStatus === 'authenticated' || sessionStatus === 'offline-authenticated'
+
   return {
     isInitializing: sessionStatus === 'initializing',
-    isAuthenticated: sessionStatus === 'authenticated',
+    isAuthenticated,
+    canUseBackend: sessionStatus === 'authenticated',
+    isOfflineAuthenticated: sessionStatus === 'offline-authenticated',
     user,
   }
 }
@@ -25,32 +31,39 @@ export function useSession() {
  */
 export function SessionProvider({ children }: PropsWithChildren) {
   const dispatch = useAppDispatch()
-  const [restoreSession] = useRestoreSessionMutation()
+  const sessionStatus = useAppSelector(state => state.auth.sessionStatus)
+  const bootstrapGeneration = useRef(0)
 
   useEffect(() => {
+    const generation = ++bootstrapGeneration.current
     let cancelled = false
 
-    async function restore() {
-      try {
-        const refreshToken = await getRefreshToken()
-
-        if (refreshToken && !cancelled) {
-          await restoreSession().unwrap()
-        }
-      } catch {
-        // restoreSession already cleared local auth state
-      } finally {
-        dispatch(sessionRestorationFinished())
-      }
-    }
-
-    restore()
+    void bootstrapSession(dispatch, store.getState, {
+      cancelled: () => cancelled || bootstrapGeneration.current !== generation,
+    })
 
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [dispatch])
+
+  useEffect(() => {
+    if (sessionStatus !== 'offline-authenticated') {
+      return
+    }
+
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const online = Boolean(state.isConnected && state.isInternetReachable !== false)
+
+      if (!online) {
+        return
+      }
+
+      void reconnectOfflineSession(dispatch, store.getState)
+    })
+
+    return unsubscribe
+  }, [dispatch, sessionStatus])
 
   return <>{children}</>
 }
