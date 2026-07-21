@@ -17,6 +17,7 @@ import {
   createTodoOfflineAware,
   disableLocalOnlyMode,
   enableLocalOnlyMode,
+  reconcileAfterTodoChanged,
   refreshTodosFromServer,
   resumeLocalOnlyMigration,
   updateTodoOfflineAware,
@@ -299,5 +300,36 @@ describe('todoService offline routing', () => {
 
     expect(reconciled.done).toBe(true)
     expect(reconciled.syncStatus).toBe('pending')
+  })
+
+  it('does not crash when a paginated todos response is missing data', async () => {
+    fetchMock.mockResolvedValueOnce(graphqlSuccess({ todos: null }))
+
+    const todos = await refreshTodosFromServer(store.dispatch, USER_ID)
+
+    expect(todos).toEqual([])
+  })
+
+  it('keeps an incremental subscription update when the follow-up refresh fails', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline during refresh'))
+
+    await reconcileAfterTodoChanged(store.dispatch, USER_ID, {
+      type: 'CREATED',
+      todoId: 'server-created',
+      occurredAt: '2026-07-20T21:00:00.000Z',
+      todo: {
+        id: 'server-created',
+        title: 'From subscription',
+        description: '',
+        done: false,
+        dueTo: null,
+        reminderOn: null,
+        createdAt: '2026-07-20T20:00:00.000Z',
+        updatedAt: '2026-07-20T20:00:00.000Z',
+      },
+    })
+
+    const persisted = await loadOfflineStore(USER_ID)
+    expect(persisted.todos.some(todo => todo.serverId === 'server-created')).toBe(true)
   })
 })

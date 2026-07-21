@@ -13,6 +13,7 @@ interface SubscriptionOptions {
   getAccessToken: () => string | null
   onConnected: (reconnected: boolean) => void
   onTodoChanged: (event: TodoChangedEvent) => void
+  onError?: (error: unknown) => void
   retryDelayMs?: number
 }
 
@@ -28,6 +29,16 @@ interface ProtocolMessage {
 
 const OPERATION_ID = 'todo-changed'
 
+function isPermanentSubscriptionError(payload: unknown): boolean {
+  const serialized = JSON.stringify(payload ?? '').toUpperCase()
+
+  return (
+    serialized.includes('UNAUTHENTICATED') ||
+    serialized.includes('FORBIDDEN') ||
+    serialized.includes('UNAUTHORIZED')
+  )
+}
+
 /**
  * Minimal graphql-transport-ws client for the app's single subscription.
  * A fresh access token is read for every connection attempt.
@@ -36,15 +47,17 @@ export function startTodoChangedSubscription({
   getAccessToken,
   onConnected,
   onTodoChanged,
+  onError,
   retryDelayMs = 1000,
 }: SubscriptionOptions): () => void {
   let socket: WebSocket | null = null
   let retryTimer: ReturnType<typeof setTimeout> | null = null
   let stopped = false
+  let authBlocked = false
   let connectedBefore = false
 
   function scheduleReconnect() {
-    if (stopped || retryTimer) {
+    if (stopped || retryTimer || authBlocked) {
       return
     }
 
@@ -66,6 +79,7 @@ export function startTodoChangedSubscription({
       return
     }
 
+    authBlocked = false
     socket = new WebSocket(Config.graphqlWsUrl, 'graphql-transport-ws')
 
     socket.onopen = () => {
@@ -106,6 +120,12 @@ export function startTodoChangedSubscription({
       }
 
       if (message.type === 'error' || message.type === 'complete') {
+        if (message.type === 'error') {
+          onError?.(message.payload ?? message)
+          if (isPermanentSubscriptionError(message.payload ?? message)) {
+            authBlocked = true
+          }
+        }
         socket?.close()
         return
       }
@@ -125,7 +145,9 @@ export function startTodoChangedSubscription({
 
     socket.onclose = () => {
       socket = null
-      scheduleReconnect()
+      if (!authBlocked) {
+        scheduleReconnect()
+      }
     }
   }
 

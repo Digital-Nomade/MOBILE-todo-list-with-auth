@@ -139,7 +139,7 @@ export function useTodoSearch(term: string) {
   const dispatch = useAppDispatch()
   const { canUseBackend } = useSession()
   const localTodos = useAppSelector(selectOfflineTodos)
-  const { localOnly, isOnline } = useAppSelector(selectTodoSyncState)
+  const { localOnly, isOnline, searchRefreshTick } = useAppSelector(selectTodoSyncState)
   const [results, setResults] = useState<TodoViewModel[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -196,7 +196,7 @@ export function useTodoSearch(term: string) {
     return () => {
       cancelled = true
     }
-  }, [dispatch, isLocalSearch, localTodos, normalizedTerm])
+  }, [dispatch, isLocalSearch, localTodos, normalizedTerm, searchRefreshTick])
 
   return {
     results,

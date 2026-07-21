@@ -13,6 +13,8 @@ import {
 import * as Crypto from 'expo-crypto'
 import NetInfo from '@react-native-community/netinfo'
 import { todoApi } from '../todoApi'
+import { applyTodoChangedEventToStore } from '../applyTodoChangedEvent'
+import { TodoChangedEvent } from '../todoSubscription'
 import {
   applyUpdateToRecord,
   serverTodoToLocalRecord,
@@ -25,6 +27,7 @@ import {
   setLocalOnly,
   setSyncMeta,
   upsertTodoView,
+  incrementSearchRefreshTick,
 } from './offlineSlice'
 import { loadOfflineStore, saveOfflineStore, updateOfflineStore } from './repository'
 import {
@@ -49,6 +52,14 @@ async function isDeviceOnline(): Promise<boolean> {
   return Boolean(state.isConnected && state.isInternetReachable !== false)
 }
 
+let serverRefreshChain: Promise<unknown> = Promise.resolve()
+
+function runExclusiveServerRefresh<T>(task: () => Promise<T>): Promise<T> {
+  const next = serverRefreshChain.then(task, task)
+  serverRefreshChain = next.then(() => undefined, () => undefined)
+  return next
+}
+
 async function fetchAllServerTodos(dispatch: AppDispatch): Promise<LocalTodoRecord[]> {
   const records: LocalTodoRecord[] = []
   let currentPage = 1
@@ -61,6 +72,10 @@ async function fetchAllServerTodos(dispatch: AppDispatch): Promise<LocalTodoReco
         { forceRefetch: true, subscribe: false },
       )
     ).unwrap()
+
+    if (!page?.data) {
+      break
+    }
 
     records.push(...page.data.map(todo => serverTodoToLocalRecord(todo)))
     hasMore = page.total != null
@@ -126,47 +141,77 @@ export async function searchServerTodos(
     }, { subscribe: false }),
   ).unwrap()
 
-  return page.data.map(todo => todoToViewModel(serverTodoToLocalRecord(todo)))
+  return (page?.data ?? []).map(todo => todoToViewModel(serverTodoToLocalRecord(todo)))
 }
 
 export async function refreshTodosFromServer(
   dispatch: AppDispatch,
   userId: string
 ): Promise<TodoViewModel[]> {
-  const online = await isDeviceOnline()
-  const store = await loadOfflineStore(userId)
+  return runExclusiveServerRefresh(async () => {
+    const online = await isDeviceOnline()
+    const store = await loadOfflineStore(userId)
 
-  if (!online || store.localOnly) {
-    publishStore(dispatch, store)
-    return store.todos.map(todoToViewModel)
-  }
-
-  try {
-    const serverRecords = await fetchAllServerTodos(dispatch)
-    const merged = mergeServerWithPendingLocal(store, serverRecords)
-    const nextStore: UserOfflineStore = {
-      ...store,
-      todos: merged,
-      lastSyncAt: new Date().toISOString(),
-    }
-
-    await saveOfflineStore(nextStore)
-    publishStore(dispatch, nextStore)
-
-    if (nextStore.queue.length > 0) {
-      void runTodoSync(dispatch, userId)
-    }
-
-    return nextStore.todos.map(todoToViewModel)
-  } catch (error) {
-    publishStore(dispatch, store)
-
-    if (getErrorCode(error) === 'NETWORK_ERROR') {
+    if (!online || store.localOnly) {
+      publishStore(dispatch, store)
       return store.todos.map(todoToViewModel)
     }
 
-    throw error
+    try {
+      const serverRecords = await fetchAllServerTodos(dispatch)
+      const merged = mergeServerWithPendingLocal(store, serverRecords)
+      const nextStore: UserOfflineStore = {
+        ...store,
+        todos: merged,
+        lastSyncAt: new Date().toISOString(),
+      }
+
+      await saveOfflineStore(nextStore)
+      publishStore(dispatch, nextStore)
+
+      if (nextStore.queue.length > 0) {
+        void runTodoSync(dispatch, userId)
+      }
+
+      return nextStore.todos.map(todoToViewModel)
+    } catch (error) {
+      publishStore(dispatch, store)
+
+      if (getErrorCode(error) === 'NETWORK_ERROR') {
+        return store.todos.map(todoToViewModel)
+      }
+
+      throw error
+    }
+  })
+}
+
+/**
+ * Applies a live subscription event, refetches todos from the server, and
+ * invalidates list/search caches so open screens reconcile.
+ */
+export async function reconcileAfterTodoChanged(
+  dispatch: AppDispatch,
+  userId: string,
+  event?: TodoChangedEvent,
+): Promise<void> {
+  if (event) {
+    const nextStore = await updateOfflineStore(userId, store =>
+      applyTodoChangedEventToStore(store, event),
+    )
+    publishStore(dispatch, nextStore)
   }
+
+  try {
+    await refreshTodosFromServer(dispatch, userId)
+  } catch (error) {
+    // Incremental subscription updates may already be visible; keep going.
+    if (!event) {
+      throw error
+    }
+  }
+
+  dispatch(incrementSearchRefreshTick())
 }
 
 function mergeServerWithPendingLocal(

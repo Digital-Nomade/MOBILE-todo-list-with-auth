@@ -116,4 +116,30 @@ describe('todoChanged subscription', () => {
 
     stop()
   })
+
+  it('stops reconnecting after an auth failure', () => {
+    const onError = jest.fn()
+    const stop = startTodoChangedSubscription({
+      getAccessToken: () => 'access-1',
+      onConnected: jest.fn(),
+      onTodoChanged: jest.fn(),
+      onError,
+      retryDelayMs: 10,
+    })
+    const socket = MockWebSocket.instances[0]
+
+    socket.onopen?.()
+    socket.emit({
+      type: 'error',
+      payload: [{ message: 'UNAUTHENTICATED' }],
+    })
+    socket.onclose?.()
+
+    jest.advanceTimersByTime(10)
+
+    expect(onError).toHaveBeenCalled()
+    expect(MockWebSocket.instances).toHaveLength(1)
+
+    stop()
+  })
 })
