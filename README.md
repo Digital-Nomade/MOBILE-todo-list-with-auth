@@ -88,19 +88,27 @@ npm run web
 
 All backend operations use HTTP `POST` requests to `/graphql`.
 
-The frontend reads one public environment variable:
+The frontend reads these public environment variables:
 
 ```bash
 EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3773/graphql
+EXPO_PUBLIC_GRAPHQL_WS_URL=ws://localhost:3773/graphql
 ```
 
-If the variable is not set, `constants/Config.ts` uses
-`http://localhost:3773/graphql`.
+If `EXPO_PUBLIC_GRAPHQL_URL` is not set, `constants/Config.ts` picks a
+platform default:
+
+- iOS Simulator and web: `http://localhost:3773/graphql`
+- Android Emulator: `http://10.0.2.2:3773/graphql`
+
+If `EXPO_PUBLIC_GRAPHQL_WS_URL` is not set, the WebSocket URL is derived from
+the HTTP URL by swapping `http`/`https` for `ws`/`wss`.
 
 For persistent local configuration, create an uncommitted `.env.local`:
 
 ```dotenv
 EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3773/graphql
+EXPO_PUBLIC_GRAPHQL_WS_URL=ws://localhost:3773/graphql
 ```
 
 Expo public variables are embedded in the client bundle. Do not put secrets,
@@ -115,10 +123,12 @@ EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3773/graphql npm run ios
 EXPO_PUBLIC_GRAPHQL_URL=http://localhost:3773/graphql npm run web
 ```
 
-The standard Android Emulator reaches the host machine through `10.0.2.2`:
+The standard Android Emulator reaches the host machine through `10.0.2.2`.
+When unset, `constants/Config.ts` already defaults to that host on Android:
 
 ```bash
 EXPO_PUBLIC_GRAPHQL_URL=http://10.0.2.2:3773/graphql npm run android
+EXPO_PUBLIC_GRAPHQL_WS_URL=ws://10.0.2.2:3773/graphql npm run android
 ```
 
 For a physical device, use the development machine's LAN address and ensure

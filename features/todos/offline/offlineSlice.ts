@@ -11,12 +11,14 @@ export interface OfflineSliceState extends TodoSyncState {
   userId: string | null
   todos: TodoViewModel[]
   isHydrated: boolean
+  searchRefreshTick: number
 }
 
 const initialState: OfflineSliceState = {
   userId: null,
   todos: [],
   isHydrated: false,
+  searchRefreshTick: 0,
   isOnline: true,
   localOnly: false,
   pendingCount: 0,
@@ -87,6 +89,9 @@ const offlineSlice = createSlice({
     setLocalOnly: (state, action: PayloadAction<boolean>) => {
       state.localOnly = action.payload
     },
+    incrementSearchRefreshTick: state => {
+      state.searchRefreshTick += 1
+    },
   },
 })
 
@@ -100,6 +105,7 @@ export const {
   upsertTodoView,
   removeTodoView,
   setLocalOnly,
+  incrementSearchRefreshTick,
 } = offlineSlice.actions
 
 export default offlineSlice.reducer
@@ -127,12 +133,14 @@ export const selectTodoSyncState = createSelector(
     coordinatorStatus,
     lastSyncAt,
     lastError,
-  }): TodoSyncState => ({
+    searchRefreshTick,
+  }): TodoSyncState & { searchRefreshTick: number } => ({
     isOnline,
     localOnly,
     pendingCount,
     coordinatorStatus,
     lastSyncAt,
     lastError,
+    searchRefreshTick,
   }),
 )
